@@ -11,7 +11,7 @@
         <flux:header container class="border-b border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
             <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-2">
                 <flux:icon.sparkles class="size-6 text-emerald-600" />
-                <flux:heading size="lg" class="!font-bold">Kokosip</flux:heading>
+                <flux:heading size="lg" class="!font-bold">Smart Agro</flux:heading>
             </a>
 
             <flux:navbar class="-mb-px max-md:hidden ms-6">
@@ -54,7 +54,7 @@
 
         <footer class="mt-16 border-t border-zinc-200 bg-zinc-50 py-8 dark:border-zinc-700 dark:bg-zinc-900">
             <div class="container mx-auto px-4 text-center text-sm text-zinc-600 dark:text-zinc-400">
-                &copy; {{ date('Y') }} Kokosip. {{ __('Premium King Coconut from Sri Lanka.') }}
+                &copy; {{ date('Y') }} Smart Agro. {{ __('Premium King Coconut from Sri Lanka.') }}
             </div>
         </footer>
 

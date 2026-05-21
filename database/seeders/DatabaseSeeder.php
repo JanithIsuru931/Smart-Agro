@@ -16,7 +16,7 @@ class DatabaseSeeder extends Seeder
     {
         User::factory()->create([
             'name' => 'Admin',
-            'email' => 'admin@kokosip.test',
+            'email' => 'admin@smartagro.test',
             'role' => 'admin',
             'email_verified_at' => now(),
         ]);

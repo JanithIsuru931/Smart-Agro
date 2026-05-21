@@ -6,8 +6,8 @@ services:
       args:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
-    image: kokosip-app:latest
-    container_name: kokosip-app
+    image: smartagro-app:latest
+    container_name: smartagro-app
     restart: unless-stopped
     environment:
       APP_ENV: ${APP_ENV:-local}
@@ -20,11 +20,11 @@ services:
       - app-storage:/var/www/html/storage
       - sqlite-data:/var/www/html/database
     networks:
-      - kokosip
+      - smartagro
 
   web:
     image: nginx:1.27-alpine
-    container_name: kokosip-web
+    container_name: smartagro-web
     restart: unless-stopped
     ports:
       - "${APP_PORT:-8000}:80"
@@ -34,16 +34,16 @@ services:
     depends_on:
       - app
     networks:
-      - kokosip
+      - smartagro
 
   # Optional: enable MySQL by uncommenting and setting DB_CONNECTION=mysql in .env
   # mysql:
   #   image: mysql:8.4
-  #   container_name: kokosip-mysql
+  #   container_name: smartagro-mysql
   #   restart: unless-stopped
   #   environment:
-  #     MYSQL_DATABASE: ${DB_DATABASE:-kokosip}
-  #     MYSQL_USER: ${DB_USERNAME:-kokosip}
+  #     MYSQL_DATABASE: ${DB_DATABASE:-smartagro}
+  #     MYSQL_USER: ${DB_USERNAME:-smartagro}
   #     MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
   #     MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-secret}
   #   volumes:
@@ -51,7 +51,7 @@ services:
   #   ports:
   #     - "${DB_PORT:-3306}:3306"
   #   networks:
-  #     - kokosip
+  #     - smartagro
 
 volumes:
   app-storage:
@@ -59,5 +59,5 @@ volumes:
   # mysql-data:
 
 networks:
-  kokosip:
+  smartagro:
     driver: bridge
