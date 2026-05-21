@@ -1,0 +1,64 @@
+.git
+.github
+.gitignore
+.gitattributes
+.editorconfig
+
+# Local-only directories
+node_modules
+vendor
+public/build
+public/hot
+public/storage
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Database
+database/database.sqlite
+database/*.sqlite-journal
+
+# Storage runtime data
+storage/app/private/*
+storage/app/public/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+storage/logs/*
+
+# Keep .gitignore files inside storage so directories exist
+!storage/app/private/.gitignore
+!storage/app/public/.gitignore
+!storage/framework/cache/.gitignore
+!storage/framework/sessions/.gitignore
+!storage/framework/testing/.gitignore
+!storage/framework/views/.gitignore
+!storage/logs/.gitignore
+
+# Editor / OS
+.idea
+.vscode
+.fleet
+.zed
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+.phpunit.result.cache
+.phpunit.cache
+.pest.cache
+
+# Docker meta
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+.dockerignore
