@@ -157,8 +157,11 @@ new #[Title('Supplier Purchase Log')] class extends Component {
                             <td class="px-4 py-3">{{ number_format($purchase->unit_price, 2) }}</td>
                             <td class="px-4 py-3 font-medium">{{ number_format($purchase->total_paid, 2) }}</td>
                             <td class="px-4 py-3 text-right">
-                                <flux:button size="sm" icon="pencil" wire:click="openEdit({{ $purchase->id }})">{{ __('Edit') }}</flux:button>
-                                <flux:button size="sm" variant="danger" icon="trash" wire:click="delete({{ $purchase->id }})" wire:confirm="{{ __('Delete this purchase record?') }}" />
+                                <div class="flex flex-wrap justify-end gap-2">
+                                    <flux:button size="sm" :href="route('admin.supplier-purchases.receipt', $purchase)">{{ __('Receipt') }}</flux:button>
+                                    <flux:button size="sm" icon="pencil" wire:click="openEdit({{ $purchase->id }})">{{ __('Edit') }}</flux:button>
+                                    <flux:button size="sm" variant="danger" icon="trash" wire:click="delete({{ $purchase->id }})" wire:confirm="{{ __('Delete this purchase record?') }}" />
+                                </div>
                             </td>
                         </tr>
                     @empty
