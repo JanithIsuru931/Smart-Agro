@@ -25,8 +25,9 @@ if [ "${DB_CONNECTION:-sqlite}" = "sqlite" ]; then
 fi
 
 # Storage directories
-mkdir -p storage/framework/{cache,sessions,testing,views} storage/logs bootstrap/cache
-chmod -R 775 storage bootstrap/cache database 2>/dev/null || true
+mkdir -p storage/app/public storage/framework/{cache,sessions,testing,views} storage/logs bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache database 2>/dev/null || true
+chmod -R ug+rwX storage bootstrap/cache database 2>/dev/null || true
 
 # Run migrations (with --force for non-interactive)
 if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
@@ -39,6 +40,9 @@ if [ "${SEED_DATABASE:-false}" = "true" ]; then
 fi
 
 # Storage symlink
+if [ -e public/storage ] || [ -L public/storage ]; then
+    rm -rf public/storage
+fi
 php artisan storage:link --no-interaction || true
 
 # Cache config/routes/views in production
