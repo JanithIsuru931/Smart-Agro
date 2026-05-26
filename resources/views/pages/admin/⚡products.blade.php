@@ -3,12 +3,16 @@
 use App\Models\Product;
 use Flux\Flux;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 new #[Title('Manage Products')] class extends Component {
+    use WithFileUploads;
+
     public ?int $editingId = null;
 
     #[Validate('required|string|max:255')]
@@ -22,6 +26,11 @@ new #[Title('Manage Products')] class extends Component {
 
     #[Validate('required|integer|min:0')]
     public int $stock = 0;
+
+    #[Validate('nullable|image|mimes:jpg,jpeg,png,webp|max:2048')]
+    public $image = null;
+
+    public ?string $currentImage = null;
 
     #[Validate('boolean')]
     public bool $is_active = true;
@@ -46,20 +55,35 @@ new #[Title('Manage Products')] class extends Component {
         $this->description = $product->description ?? '';
         $this->price = (float) $product->price;
         $this->stock = $product->stock;
+        $this->image = null;
+        $this->currentImage = $product->image;
         $this->is_active = $product->is_active;
         Flux::modal('product-form')->show();
     }
 
     public function save(): void
     {
-        $data = $this->validate();
-        $data['slug'] = Str::slug($data['name']).'-'.Str::random(5);
+        $data = collect($this->validate())->except('image')->all();
+        $imagePath = $this->image?->store('products', 'public');
 
         if ($this->editingId) {
-            unset($data['slug']);
-            Product::findOrFail($this->editingId)->update($data);
+            $product = Product::findOrFail($this->editingId);
+            $oldImage = $product->image;
+
+            if ($imagePath) {
+                $data['image'] = $imagePath;
+            }
+
+            $product->update($data);
+
+            if ($imagePath && $oldImage) {
+                Storage::disk('public')->delete($oldImage);
+            }
+
             Flux::toast(variant: 'success', text: __('Product updated.'));
         } else {
+            $data['slug'] = Str::slug($data['name']).'-'.Str::random(5);
+            $data['image'] = $imagePath;
             Product::create($data);
             Flux::toast(variant: 'success', text: __('Product created.'));
         }
@@ -92,6 +116,8 @@ new #[Title('Manage Products')] class extends Component {
         $this->description = '';
         $this->price = 0;
         $this->stock = 0;
+        $this->image = null;
+        $this->currentImage = null;
         $this->is_active = true;
         $this->resetErrorBag();
     }
@@ -110,6 +136,7 @@ new #[Title('Manage Products')] class extends Component {
             <table class="w-full">
                 <thead class="bg-zinc-50 dark:bg-zinc-800">
                     <tr class="text-left text-sm">
+                        <th class="px-4 py-3 font-medium">{{ __('Image') }}</th>
                         <th class="px-4 py-3 font-medium">{{ __('Name') }}</th>
                         <th class="px-4 py-3 font-medium">{{ __('Price (LKR)') }}</th>
                         <th class="px-4 py-3 font-medium">{{ __('Stock') }}</th>
@@ -120,6 +147,15 @@ new #[Title('Manage Products')] class extends Component {
                 <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700">
                     @forelse ($this->products as $product)
                         <tr>
+                            <td class="px-4 py-3">
+                                @if ($product->image)
+                                    <img src="{{ asset('storage/'.$product->image) }}" alt="{{ $product->name }}" class="h-14 w-14 rounded-lg object-cover ring-1 ring-zinc-200 dark:ring-zinc-700">
+                                @else
+                                    <div class="flex h-14 w-14 items-center justify-center rounded-lg border border-dashed border-zinc-300 text-[10px] font-medium uppercase tracking-wide text-zinc-400 dark:border-zinc-600">
+                                        {{ __('No image') }}
+                                    </div>
+                                @endif
+                            </td>
                             <td class="px-4 py-3">
                                 <div class="font-medium">{{ $product->name }}</div>
                                 <div class="text-xs text-zinc-500">{{ Str::limit($product->description, 60) }}</div>
@@ -141,7 +177,7 @@ new #[Title('Manage Products')] class extends Component {
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-8 text-center text-sm text-zinc-500">
+                            <td colspan="6" class="px-4 py-8 text-center text-sm text-zinc-500">
                                 {{ __('No products yet. Click "Add Product" to create one.') }}
                             </td>
                         </tr>
@@ -152,7 +188,7 @@ new #[Title('Manage Products')] class extends Component {
     </div>
 
     <flux:modal name="product-form" class="md:w-[500px]">
-        <form wire:submit="save" class="space-y-4">
+        <form wire:submit="save" class="space-y-4" enctype="multipart/form-data">
             <flux:heading size="lg" class="!font-semibold">
                 {{ $editingId ? __('Edit Product') : __('Add Product') }}
             </flux:heading>
@@ -162,6 +198,23 @@ new #[Title('Manage Products')] class extends Component {
             <div class="grid grid-cols-2 gap-4">
                 <flux:input wire:model="price" type="number" step="0.01" min="0" :label="__('Price (LKR)')" required />
                 <flux:input wire:model="stock" type="number" min="0" :label="__('Stock')" required />
+            </div>
+
+            <div class="space-y-2">
+                <label class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{{ __('Item Image') }}</label>
+                <input wire:model="image" type="file" accept="image/*" class="block w-full cursor-pointer rounded-lg border border-zinc-300 bg-white text-sm text-zinc-900 shadow-sm file:mr-4 file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:file:bg-zinc-100 dark:file:text-zinc-900 dark:hover:file:bg-zinc-200">
+                @error('image')
+                    <p class="text-sm text-red-600">{{ $message }}</p>
+                @enderror
+                @if ($editingId && $currentImage)
+                    <div class="flex items-center gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
+                        <img src="{{ asset('storage/'.$currentImage) }}" alt="{{ $name }}" class="h-16 w-16 rounded-lg object-cover">
+                        <div>
+                            <div class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ __('Current image') }}</div>
+                            <div class="text-xs text-zinc-500">{{ __('Upload a new file to replace it.') }}</div>
+                        </div>
+                    </div>
+                @endif
             </div>
             <flux:switch wire:model="is_active" :label="__('Visible to customers')" />
 

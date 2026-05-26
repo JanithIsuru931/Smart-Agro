@@ -43,7 +43,7 @@ fi
 if [ -e public/storage ] || [ -L public/storage ]; then
     rm -rf public/storage
 fi
-php artisan storage:link --no-interaction || true
+ln -s ../storage/app/public public/storage
 
 # Cache config/routes/views in production
 if [ "${APP_ENV:-local}" = "production" ]; then
