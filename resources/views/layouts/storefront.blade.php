@@ -21,6 +21,9 @@
                 <flux:navbar.item :href="route('bulk.inquiry')" :current="request()->routeIs('bulk.inquiry')" wire:navigate>
                     {{ __('Bulk Orders') }}
                 </flux:navbar.item>
+                <flux:navbar.item :href="route('about')" :current="request()->routeIs('about')" wire:navigate>
+                    {{ __('About') }}
+                </flux:navbar.item>
             </flux:navbar>
 
             <flux:spacer />
