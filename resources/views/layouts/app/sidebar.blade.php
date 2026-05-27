@@ -31,6 +31,12 @@
                         <flux:sidebar.item icon="banknotes" :href="route('admin.supplier-purchases')" :current="request()->routeIs('admin.supplier-purchases')" wire:navigate>
                             {{ __('Purchase Log') }}
                         </flux:sidebar.item>
+                        <flux:sidebar.item icon="users" :href="route('admin.employees')" :current="request()->routeIs('admin.employees')" wire:navigate>
+                            {{ __('Employees') }}
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="banknotes" :href="route('admin.employee-payments')" :current="request()->routeIs('admin.employee-payments')" wire:navigate>
+                            {{ __('Salary Log') }}
+                        </flux:sidebar.item>
                         <flux:sidebar.item icon="clipboard-document-list" :href="route('admin.orders')" :current="request()->routeIs('admin.orders')" wire:navigate>
                             {{ __('Local Orders') }}
                         </flux:sidebar.item>

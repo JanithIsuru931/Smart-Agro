@@ -29,6 +29,8 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::livewire('products', 'pages::admin.products')->name('products');
     Route::livewire('suppliers', 'pages::admin.suppliers')->name('suppliers');
     Route::livewire('supplier-purchases', 'pages::admin.supplier-purchases')->name('supplier-purchases');
+    Route::livewire('employees', 'pages::admin.employees')->name('employees');
+    Route::livewire('employee-payments', 'pages::admin.employee-payments')->name('employee-payments');
     Route::get('supplier-purchases/{supplierPurchase}/receipt', function (SupplierPurchase $supplierPurchase) {
         $supplierPurchase->load('supplier');
 
