@@ -32,14 +32,28 @@ new #[Layout('layouts.storefront')] #[Title('Shop King Coconut')] class extends 
 }; ?>
 
 <div>
-    <section class="mb-10 rounded-2xl bg-gradient-to-br from-emerald-50 to-amber-50 p-8 dark:from-emerald-950/30 dark:to-amber-950/30 md:p-12">
-        <div class="max-w-2xl">
-            <flux:heading size="xl" class="!text-4xl !font-bold md:!text-5xl">
-                {{ __('Fresh King Coconut Delivered to Your Door') }}
-            </flux:heading>
-            <flux:text class="mt-4 text-lg">
-                {{ __('Naturally hydrating. Locally sourced. Pay on delivery.') }}
-            </flux:text>
+    <section class="mb-10 overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 to-amber-50 dark:from-emerald-950/30 dark:to-amber-950/30">
+        <div class="grid items-center md:grid-cols-2">
+            <div class="p-8 md:p-12">
+                <flux:heading size="xl" class="!text-4xl !font-bold md:!text-5xl">
+                    {{ __('Fresh King Coconut Delivered to Your Door') }}
+                </flux:heading>
+                <flux:text class="mt-4 text-lg">
+                    {{ __('Naturally hydrating. Locally sourced. Pay on delivery.') }}
+                </flux:text>
+                <div class="mt-6">
+                    <flux:button variant="primary" :href="route('bulk.inquiry')" wire:navigate icon-trailing="arrow-right">
+                        {{ __('Request Bulk Quote') }}
+                    </flux:button>
+                </div>
+            </div>
+            <div class="relative hidden h-full min-h-[280px] md:block">
+                <img
+                    src="{{ asset('images/coconut-bulk.png') }}"
+                    alt="{{ __('Fresh king coconuts ready for delivery') }}"
+                    class="absolute inset-0 size-full object-cover"
+                >
+            </div>
         </div>
     </section>
 
@@ -88,5 +102,47 @@ new #[Layout('layouts.storefront')] #[Title('Shop King Coconut')] class extends 
                 @endforeach
             </div>
         @endif
+    </section>
+
+    <section class="mt-12">
+        <flux:heading size="lg" class="mb-6 !font-semibold">{{ __('From Our Farm to Your Door') }}</flux:heading>
+        <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div class="group overflow-hidden rounded-xl">
+                <img
+                    src="{{ asset('images/coconut-packaged.jpg') }}"
+                    alt="{{ __('Premium king coconuts in protective mesh packaging') }}"
+                    class="aspect-square w-full object-cover transition duration-300 group-hover:scale-105"
+                    loading="lazy"
+                >
+                <flux:text class="mt-2 text-center text-sm !font-medium">{{ __('Premium Packaging') }}</flux:text>
+            </div>
+            <div class="group overflow-hidden rounded-xl">
+                <img
+                    src="{{ asset('images/coconut-raw.jpg') }}"
+                    alt="{{ __('Hand-selected king coconuts sorted by quality') }}"
+                    class="aspect-square w-full object-cover transition duration-300 group-hover:scale-105"
+                    loading="lazy"
+                >
+                <flux:text class="mt-2 text-center text-sm !font-medium">{{ __('Quality Sorted') }}</flux:text>
+            </div>
+            <div class="group overflow-hidden rounded-xl">
+                <img
+                    src="{{ asset('images/coconut-boxed.jpg') }}"
+                    alt="{{ __('King coconuts carefully wrapped for safe shipping') }}"
+                    class="aspect-square w-full object-cover transition duration-300 group-hover:scale-105"
+                    loading="lazy"
+                >
+                <flux:text class="mt-2 text-center text-sm !font-medium">{{ __('Safe Shipping') }}</flux:text>
+            </div>
+            <div class="group overflow-hidden rounded-xl">
+                <img
+                    src="{{ asset('images/coconut-delivery.webp') }}"
+                    alt="{{ __('Boxed king coconuts ready for delivery') }}"
+                    class="aspect-square w-full object-cover transition duration-300 group-hover:scale-105"
+                    loading="lazy"
+                >
+                <flux:text class="mt-2 text-center text-sm !font-medium">{{ __('Ready to Deliver') }}</flux:text>
+            </div>
+        </div>
     </section>
 </div>

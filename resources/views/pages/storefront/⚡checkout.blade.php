@@ -15,7 +15,7 @@ new #[Layout('layouts.storefront')] #[Title('Checkout')] class extends Component
     #[Validate('required|string|max:255')]
     public string $customer_name = '';
 
-    #[Validate('required|string|max:30')]
+    #[Validate('required|string|max:30|regex:/^07\d{2}\s?\d{3}\s?\d{3}$/')]
     public string $customer_phone = '';
 
     #[Validate('required|string|max:500')]
@@ -97,9 +97,21 @@ new #[Layout('layouts.storefront')] #[Title('Checkout')] class extends Component
 
                     <div class="space-y-4">
                         <flux:input wire:model="customer_name" :label="__('Full Name')" required autocomplete="name" />
+                        @error('customer_name')
+                            <p class="text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                         <flux:input wire:model="customer_phone" :label="__('Phone Number')" type="tel" required autocomplete="tel" placeholder="07X XXX XXXX" />
+                        @error('customer_phone')
+                            <p class="text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                         <flux:textarea wire:model="customer_address" :label="__('Delivery Address')" required rows="3" />
+                        @error('customer_address')
+                            <p class="text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                         <flux:textarea wire:model="notes" :label="__('Order Notes (optional)')" rows="2" />
+                        @error('notes')
+                            <p class="text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
 

@@ -13,10 +13,10 @@ new #[Title('Manage Employees')] class extends Component {
     #[Validate('required|string|max:255')]
     public string $name = '';
 
-    #[Validate('nullable|string|max:30')]
+    #[Validate('required|string|max:30|regex:/^07\d{2}\s?\d{3}\s?\d{3}$/')]
     public string $phone = '';
 
-    #[Validate('nullable|string|max:255')]
+    #[Validate('required|string|max:255')]
     public string $location = '';
 
     #[Validate('nullable|string|max:1000')]
@@ -159,9 +159,21 @@ new #[Title('Manage Employees')] class extends Component {
             </flux:heading>
 
             <flux:input wire:model="name" :label="__('Name')" required />
-            <flux:input wire:model="phone" :label="__('Phone')" />
-            <flux:input wire:model="location" :label="__('Location')" />
+            @error('name')
+                <p class="text-sm text-red-600">{{ $message }}</p>
+            @enderror
+            <flux:input wire:model="phone" :label="__('Phone')" type="tel" required />
+            @error('phone')
+                <p class="text-sm text-red-600">{{ $message }}</p>
+            @enderror
+            <flux:input wire:model="location" :label="__('Location')" required />
+            @error('location')
+                <p class="text-sm text-red-600">{{ $message }}</p>
+            @enderror
             <flux:textarea wire:model="notes" :label="__('Notes')" rows="3" />
+            @error('notes')
+                <p class="text-sm text-red-600">{{ $message }}</p>
+            @enderror
             <flux:switch wire:model="is_active" :label="__('Active')" />
 
             <div class="flex justify-end gap-2">

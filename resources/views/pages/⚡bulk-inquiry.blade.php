@@ -79,14 +79,24 @@ new #[Layout('layouts.storefront')] #[Title('Bulk Orders')] class extends Compon
                 </flux:button>
             </div>
         @else
-            <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-6 dark:border-emerald-900/50 dark:bg-emerald-950/30">
-                <flux:heading class="!font-semibold">{{ __('Why Buy in Bulk From Us?') }}</flux:heading>
-                <ul class="mt-3 space-y-1 text-sm">
-                    <li>• {{ __('Direct from Sri Lankan plantations') }}</li>
-                    <li>• {{ __('Quality-assured, premium-grade king coconut') }}</li>
-                    <li>• {{ __('FOB and CIF pricing available (USD)') }}</li>
-                    <li>• {{ __('Minimum order: 1,000 units') }}</li>
-                </ul>
+            <div class="mb-6 grid overflow-hidden rounded-xl border border-emerald-200 dark:border-emerald-900/50 md:grid-cols-2">
+                <div class="relative hidden min-h-[200px] md:block">
+                    <img
+                        src="{{ asset('images/coconut-bulk.png') }}"
+                        alt="{{ __('Bulk king coconuts ready for export') }}"
+                        class="absolute inset-0 size-full object-cover"
+                        loading="lazy"
+                    >
+                </div>
+                <div class="bg-emerald-50 p-6 dark:bg-emerald-950/30">
+                    <flux:heading class="!font-semibold">{{ __('Why Buy in Bulk From Us?') }}</flux:heading>
+                    <ul class="mt-3 space-y-1 text-sm">
+                        <li>• {{ __('Direct from Sri Lankan plantations') }}</li>
+                        <li>• {{ __('Quality-assured, premium-grade king coconut') }}</li>
+                        <li>• {{ __('FOB and CIF pricing available (USD)') }}</li>
+                        <li>• {{ __('Minimum order: 1,000 units') }}</li>
+                    </ul>
+                </div>
             </div>
 
             <form wire:submit="submit" class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800 md:p-8">
