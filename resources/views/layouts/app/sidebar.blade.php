@@ -34,6 +34,9 @@
                         <flux:sidebar.item icon="users" :href="route('admin.employees')" :current="request()->routeIs('admin.employees')" wire:navigate>
                             {{ __('Employees') }}
                         </flux:sidebar.item>
+                        <flux:sidebar.item icon="calendar-days" :href="route('admin.attendance')" :current="request()->routeIs('admin.attendance')" wire:navigate>
+                            {{ __('Attendance') }}
+                        </flux:sidebar.item>
                         <flux:sidebar.item icon="banknotes" :href="route('admin.employee-payments')" :current="request()->routeIs('admin.employee-payments')" wire:navigate>
                             {{ __('Salary Log') }}
                         </flux:sidebar.item>

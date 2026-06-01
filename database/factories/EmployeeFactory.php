@@ -17,6 +17,7 @@ class EmployeeFactory extends Factory
             'phone' => fake()->phoneNumber(),
             'location' => fake()->randomElement(['Kurunegala', 'Gampaha', 'Puttalam', 'Negombo', 'Chilaw']),
             'notes' => fake()->optional()->sentence(),
+            'daily_rate' => fake()->randomElement([1500, 1800, 2000, 2500]),
             'is_active' => true,
         ];
     }

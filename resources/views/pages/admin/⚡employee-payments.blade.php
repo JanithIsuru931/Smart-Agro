@@ -23,9 +23,20 @@ new #[Title('Employee Salary Log')] class extends Component {
     #[Validate('nullable|string|max:1000')]
     public string $notes = '';
 
+    // Calculate salary modal properties
+    public ?int $calc_employee_id = null;
+
+    public string $calc_month = '';
+
+    public ?string $pay_month = null;
+
+    /** @var array{present_days: int, half_days: int, absent_days: int, total: float}|null */
+    public ?array $calcResult = null;
+
     public function mount(): void
     {
         $this->payment_date = now()->format('Y-m-d');
+        $this->calc_month = now()->format('Y-m');
     }
 
     #[Computed]
@@ -79,6 +90,15 @@ new #[Title('Employee Salary Log')] class extends Component {
         } else {
             EmployeePayment::create($data);
             Flux::toast(variant: 'success', text: __('Payment logged.'));
+
+            if ($this->pay_month) {
+                [$year, $month] = explode('-', $this->pay_month);
+                \App\Models\EmployeeAttendance::where('employee_id', $this->employee_id)
+                    ->whereYear('date', $year)
+                    ->whereMonth('date', $month)
+                    ->where('is_paid', false)
+                    ->update(['is_paid' => true]);
+            }
         }
 
         $this->resetForm();
@@ -91,6 +111,55 @@ new #[Title('Employee Salary Log')] class extends Component {
         Flux::toast(variant: 'success', text: __('Payment deleted.'));
     }
 
+    // --- Calculate from Attendance ---
+
+    public function openCalculate(): void
+    {
+        $this->calc_employee_id = null;
+        $this->calc_month = now()->format('Y-m');
+        $this->calcResult = null;
+        Flux::modal('calculate-salary')->show();
+    }
+
+    public function calculateSalary(): void
+    {
+        if (! $this->calc_employee_id) {
+            Flux::toast(variant: 'danger', text: __('Please select an employee.'));
+
+            return;
+        }
+
+        $employee = Employee::findOrFail($this->calc_employee_id);
+        [$year, $month] = explode('-', $this->calc_month);
+
+        $this->calcResult = $employee->calculateSalary($year, $month);
+    }
+
+    public function applyCalculatedSalary(): void
+    {
+        if (! $this->calcResult || ! $this->calc_employee_id) {
+            return;
+        }
+
+        $this->resetForm();
+        $this->employee_id = $this->calc_employee_id;
+        $this->amount = $this->calcResult['total'];
+        $this->pay_month = $this->calc_month;
+        [$year, $month] = explode('-', $this->calc_month);
+        $this->payment_date = now()->format('Y-m-d');
+        $employee = Employee::find($this->calc_employee_id);
+        $this->notes = __('Salary for :month/:year — :present present, :half half-day, :absent absent', [
+            'month' => $month,
+            'year' => $year,
+            'present' => $this->calcResult['present_days'],
+            'half' => $this->calcResult['half_days'],
+            'absent' => $this->calcResult['absent_days'],
+        ]);
+
+        Flux::modal('calculate-salary')->close();
+        Flux::modal('payment-form')->show();
+    }
+
     private function resetForm(): void
     {
         $this->editingId = null;
@@ -98,6 +167,7 @@ new #[Title('Employee Salary Log')] class extends Component {
         $this->amount = 0;
         $this->payment_date = now()->format('Y-m-d');
         $this->notes = '';
+        $this->pay_month = null;
         $this->resetErrorBag();
     }
 }; ?>
@@ -109,9 +179,14 @@ new #[Title('Employee Salary Log')] class extends Component {
                 <flux:heading size="xl" class="!font-bold">{{ __('Salary Log') }}</flux:heading>
                 <flux:text class="mt-1">{{ __('Track every salary payment made to employees') }}</flux:text>
             </div>
-            <flux:button variant="primary" icon="plus" wire:click="openCreate">
-                {{ __('Log Payment') }}
-            </flux:button>
+            <div class="flex gap-2">
+                <flux:button icon="calculator" wire:click="openCalculate">
+                    {{ __('Calculate from Attendance') }}
+                </flux:button>
+                <flux:button variant="primary" icon="plus" wire:click="openCreate">
+                    {{ __('Log Payment') }}
+                </flux:button>
+            </div>
         </div>
 
         <div class="grid gap-4 md:grid-cols-2">
@@ -165,6 +240,7 @@ new #[Title('Employee Salary Log')] class extends Component {
         </div>
     </div>
 
+    {{-- Payment Form Modal --}}
     <flux:modal name="payment-form" class="md:w-[500px]">
         <form wire:submit="save" class="space-y-4">
             <flux:heading size="lg" class="!font-semibold">
@@ -187,5 +263,61 @@ new #[Title('Employee Salary Log')] class extends Component {
                 <flux:button type="submit" variant="primary">{{ __('Save') }}</flux:button>
             </div>
         </form>
+    </flux:modal>
+
+    {{-- Calculate Salary from Attendance Modal --}}
+    <flux:modal name="calculate-salary" class="md:w-[550px]">
+        <div class="space-y-5">
+            <flux:heading size="lg" class="!font-semibold">
+                {{ __('Calculate Salary from Attendance') }}
+            </flux:heading>
+
+            <flux:select wire:model="calc_employee_id" :label="__('Employee')">
+                <option value="">{{ __('Select employee...') }}</option>
+                @foreach ($this->employees as $employee)
+                    <option value="{{ $employee->id }}">{{ $employee->name }} — LKR {{ number_format($employee->daily_rate, 2) }}/day</option>
+                @endforeach
+            </flux:select>
+
+            <flux:input wire:model="calc_month" type="month" :label="__('Month')" />
+
+            <flux:button wire:click="calculateSalary" icon="calculator" class="w-full">
+                {{ __('Calculate') }}
+            </flux:button>
+
+            @if ($calcResult)
+                <div class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
+                    <flux:heading size="md" class="mb-3 !font-semibold">{{ __('Attendance Breakdown') }}</flux:heading>
+
+                    <div class="grid grid-cols-3 gap-3 text-center">
+                        <div class="rounded-lg bg-emerald-50 p-3 dark:bg-emerald-900/20">
+                            <div class="text-2xl font-bold text-emerald-600">{{ $calcResult['present_days'] }}</div>
+                            <div class="text-xs text-emerald-600">{{ __('Present') }}</div>
+                        </div>
+                        <div class="rounded-lg bg-amber-50 p-3 dark:bg-amber-900/20">
+                            <div class="text-2xl font-bold text-amber-500">{{ $calcResult['half_days'] }}</div>
+                            <div class="text-xs text-amber-500">{{ __('Half Day') }}</div>
+                        </div>
+                        <div class="rounded-lg bg-red-50 p-3 dark:bg-red-900/20">
+                            <div class="text-2xl font-bold text-red-500">{{ $calcResult['absent_days'] }}</div>
+                            <div class="text-xs text-red-500">{{ __('Absent') }}</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex items-center justify-between rounded-lg bg-zinc-100 p-3 dark:bg-zinc-800">
+                        <flux:text class="font-medium">{{ __('Calculated Salary') }}</flux:text>
+                        <flux:heading size="lg" class="!font-bold">LKR {{ number_format($calcResult['total'], 2) }}</flux:heading>
+                    </div>
+                </div>
+
+                <flux:button wire:click="applyCalculatedSalary" variant="primary" class="w-full" icon="arrow-right">
+                    {{ __('Use This Amount & Log Payment') }}
+                </flux:button>
+            @endif
+
+            <div class="flex justify-end">
+                <flux:button type="button" x-on:click="$flux.modal('calculate-salary').close()">{{ __('Close') }}</flux:button>
+            </div>
+        </div>
     </flux:modal>
 </div>

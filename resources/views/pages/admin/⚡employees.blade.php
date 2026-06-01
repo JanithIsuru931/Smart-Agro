@@ -22,6 +22,12 @@ new #[Title('Manage Employees')] class extends Component {
     #[Validate('nullable|string|max:1000')]
     public string $notes = '';
 
+    #[Validate('required|numeric|min:0')]
+    public float $daily_rate = 0;
+
+    #[Validate('nullable|numeric|min:0')]
+    public ?float $half_day_rate = null;
+
     #[Validate('boolean')]
     public bool $is_active = true;
 
@@ -30,6 +36,12 @@ new #[Title('Manage Employees')] class extends Component {
     {
         return Employee::withCount('payments')
             ->withSum('payments', 'amount')
+            ->withCount(['attendances as attendance_present_count' => function ($q) {
+                $q->where('status', 'present')->whereMonth('date', now()->month)->whereYear('date', now()->year);
+            }])
+            ->withCount(['attendances as attendance_this_month_count' => function ($q) {
+                $q->whereMonth('date', now()->month)->whereYear('date', now()->year);
+            }])
             ->latest()
             ->get();
     }
@@ -48,6 +60,8 @@ new #[Title('Manage Employees')] class extends Component {
         $this->phone = $employee->phone ?? '';
         $this->location = $employee->location ?? '';
         $this->notes = $employee->notes ?? '';
+        $this->daily_rate = (float) $employee->daily_rate;
+        $this->half_day_rate = $employee->half_day_rate !== null ? (float) $employee->half_day_rate : null;
         $this->is_active = $employee->is_active;
         Flux::modal('employee-form')->show();
     }
@@ -85,6 +99,8 @@ new #[Title('Manage Employees')] class extends Component {
         $this->phone = '';
         $this->location = '';
         $this->notes = '';
+        $this->daily_rate = 0;
+        $this->half_day_rate = null;
         $this->is_active = true;
         $this->resetErrorBag();
     }
@@ -95,6 +111,9 @@ new #[Title('Manage Employees')] class extends Component {
         <div class="flex items-center justify-between">
             <flux:heading size="xl" class="!font-bold">{{ __('Employees') }}</flux:heading>
             <div class="flex gap-2">
+                <flux:button :href="route('admin.attendance')" wire:navigate icon="calendar-days">
+                    {{ __('Attendance') }}
+                </flux:button>
                 <flux:button :href="route('admin.employee-payments')" wire:navigate>
                     {{ __('Salary Log') }}
                 </flux:button>
@@ -111,7 +130,8 @@ new #[Title('Manage Employees')] class extends Component {
                         <th class="px-4 py-3 font-medium">{{ __('Name') }}</th>
                         <th class="px-4 py-3 font-medium">{{ __('Phone') }}</th>
                         <th class="px-4 py-3 font-medium">{{ __('Location') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ __('Payments') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ __('Daily Rate') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ __('Attendance (Month)') }}</th>
                         <th class="px-4 py-3 font-medium">{{ __('Total Paid (LKR)') }}</th>
                         <th class="px-4 py-3 font-medium">{{ __('Status') }}</th>
                         <th class="px-4 py-3 text-right font-medium">{{ __('Actions') }}</th>
@@ -128,7 +148,11 @@ new #[Title('Manage Employees')] class extends Component {
                             </td>
                             <td class="px-4 py-3 text-sm">{{ $employee->phone ?: '-' }}</td>
                             <td class="px-4 py-3 text-sm">{{ $employee->location ?: '-' }}</td>
-                            <td class="px-4 py-3">{{ number_format($employee->payments_count ?? 0) }}</td>
+                            <td class="px-4 py-3 text-sm">{{ number_format($employee->daily_rate, 2) }}</td>
+                            <td class="px-4 py-3">
+                                <flux:badge size="sm" color="emerald">{{ $employee->attendance_present_count ?? 0 }}{{ __('P') }}</flux:badge>
+                                <span class="text-xs text-zinc-400">/ {{ $employee->attendance_this_month_count ?? 0 }} {{ __('days') }}</span>
+                            </td>
                             <td class="px-4 py-3">{{ number_format($employee->payments_sum_amount ?? 0, 2) }}</td>
                             <td class="px-4 py-3">
                                 <flux:badge size="sm" :color="$employee->is_active ? 'emerald' : 'zinc'">
@@ -142,7 +166,7 @@ new #[Title('Manage Employees')] class extends Component {
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-4 py-8 text-center text-sm text-zinc-500">
+                            <td colspan="8" class="px-4 py-8 text-center text-sm text-zinc-500">
                                 {{ __('No employees yet. Click "Add Employee" to create one.') }}
                             </td>
                         </tr>
@@ -174,6 +198,22 @@ new #[Title('Manage Employees')] class extends Component {
             @error('notes')
                 <p class="text-sm text-red-600">{{ $message }}</p>
             @enderror
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <flux:input wire:model="daily_rate" type="number" step="0.01" min="0" :label="__('Daily Rate (LKR)')" required />
+                    @error('daily_rate')
+                        <p class="text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div>
+                    <flux:input wire:model="half_day_rate" type="number" step="0.01" min="0" :label="__('Half-Day Rate (LKR)')" :placeholder="__('Auto: daily / 2')" />
+                    @error('half_day_rate')
+                        <p class="text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
             <flux:switch wire:model="is_active" :label="__('Active')" />
 
             <div class="flex justify-end gap-2">
