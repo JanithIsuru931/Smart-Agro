@@ -8,6 +8,7 @@ use App\Models\Supplier;
 use App\Models\SupplierPurchase;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
@@ -21,37 +22,62 @@ class DatabaseSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
+        // Ensure the products storage directory exists
+        $storagePath = storage_path('app/public/products');
+        File::ensureDirectoryExists($storagePath);
+
         $products = [
             [
-                'name' => 'Fresh King Coconut',
-                'description' => 'Naturally sweet, hand-picked king coconut. Hydrating and refreshing.',
-                'price' => 150.00,
-                'stock' => 200,
+                'name' => 'King Coconut – Single',
+                'description' => 'Farm-fresh Sri Lankan king coconut, naturally sweet and packed with electrolytes. Hand-picked at peak maturity for the best flavour and hydration.',
+                'price' => 200.00,
+                'stock' => 50,
+                'seed_image' => 'king-coconut-single.jpg',
             ],
             [
-                'name' => 'Premium King Coconut (Large)',
-                'description' => 'Extra-large premium king coconut. Perfect for sharing.',
-                'price' => 220.00,
-                'stock' => 80,
-            ],
-            [
-                'name' => 'King Coconut 6-Pack',
-                'description' => 'Six fresh king coconuts at a bundle price. Great for parties.',
-                'price' => 800.00,
-                'stock' => 40,
-            ],
-            [
-                'name' => 'Bottled King Coconut Water (500ml)',
-                'description' => 'Pure king coconut water in a sealed bottle. No added sugar.',
+                'name' => 'King Coconut – Premium Large (15.5″)',
+                'description' => 'Extra-large 15.5-inch king coconut, selected for maximum water content and natural sweetness. Ideal for those who want the fullest refreshment in a single fruit.',
                 'price' => 250.00,
-                'stock' => 120,
+                'stock' => 50,
+                'seed_image' => 'king-coconut-premium-large.png',
+            ],
+            [
+                'name' => 'King Coconut Box – Fresh Pack (6 Pack)',
+                'description' => 'Box of six hand-selected king coconuts, carefully wrapped and packed for safe delivery. Sourced directly from Sri Lankan farms, sorted for quality and freshness. Available for both local and bulk orders.',
+                'price' => 490.00,
+                'stock' => 50,
+                'seed_image' => 'king-coconut-fresh-pack.jpg',
+            ],
+            [
+                'name' => 'King Coconut Box – Export Ready (6 Pack)',
+                'description' => 'Six premium king coconuts in branded export-grade packaging, each individually wrapped with a drinking straw. Nutritional label included. Perfect for retail resale or as a gift box. Available for local delivery and bulk orders.',
+                'price' => 490.00,
+                'stock' => 50,
+                'seed_image' => 'king-coconut-export-ready.jpg',
             ],
         ];
 
         foreach ($products as $data) {
+            $imagePath = null;
+
+            if (isset($data['seed_image'])) {
+                $source = database_path('seeders/images/'.$data['seed_image']);
+
+                if (File::exists($source)) {
+                    $extension = pathinfo($data['seed_image'], PATHINFO_EXTENSION);
+                    $filename = Str::random(40).'.'.$extension;
+                    File::copy($source, $storagePath.'/'.$filename);
+                    $imagePath = 'products/'.$filename;
+                }
+            }
+
             Product::create([
-                ...$data,
-                'slug' => Str::slug($data['name']),
+                'name' => $data['name'],
+                'description' => $data['description'],
+                'price' => $data['price'],
+                'stock' => $data['stock'],
+                'slug' => Str::slug($data['name']).'-'.Str::random(5),
+                'image' => $imagePath,
                 'is_active' => true,
             ]);
         }
