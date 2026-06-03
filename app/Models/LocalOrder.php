@@ -9,13 +9,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
-#[Fillable(['order_number', 'customer_name', 'customer_phone', 'customer_address', 'total', 'status', 'notes'])]
+#[Fillable(['order_number', 'customer_name', 'customer_phone', 'customer_address', 'total', 'status', 'notes', 'payment_method', 'payment_status', 'payhere_order_id', 'payhere_payment_id'])]
 class LocalOrder extends Model
 {
     /** @use HasFactory<LocalOrderFactory> */
     use HasFactory;
 
     public const STATUSES = ['pending', 'confirmed', 'delivered', 'cancelled'];
+
+    public const PAYMENT_METHODS = ['cod', 'payhere'];
+
+    public const PAYMENT_STATUSES = ['pending', 'paid', 'failed'];
 
     protected static function booted(): void
     {

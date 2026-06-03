@@ -18,6 +18,8 @@ class LocalOrderFactory extends Factory
             'customer_address' => fake()->address(),
             'total' => fake()->randomFloat(2, 200, 5000),
             'status' => 'pending',
+            'payment_method' => 'cod',
+            'payment_status' => 'pending',
             'notes' => fake()->optional()->sentence(),
         ];
     }

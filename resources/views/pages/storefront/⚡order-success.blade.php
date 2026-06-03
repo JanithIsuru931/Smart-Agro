@@ -50,7 +50,19 @@ new #[Layout('layouts.storefront')] #[Title('Order Confirmed')] class extends Co
                 <p><strong>{{ __('Name:') }}</strong> {{ $localOrder->customer_name }}</p>
                 <p><strong>{{ __('Phone:') }}</strong> {{ $localOrder->customer_phone }}</p>
                 <p><strong>{{ __('Address:') }}</strong> {{ $localOrder->customer_address }}</p>
-                <p><strong>{{ __('Payment:') }}</strong> {{ __('Cash on Delivery') }}</p>
+                <p>
+                    <strong>{{ __('Payment:') }}</strong>
+                    @if ($localOrder->payment_method === 'payhere')
+                        {{ __('Online Payment (PayHere)') }}
+                        @if ($localOrder->payment_status === 'paid')
+                            <flux:badge size="sm" color="emerald" class="ml-1">{{ __('Paid') }}</flux:badge>
+                        @else
+                            <flux:badge size="sm" color="amber" class="ml-1">{{ __('Processing') }}</flux:badge>
+                        @endif
+                    @else
+                        {{ __('Cash on Delivery') }}
+                    @endif
+                </p>
             </div>
         </div>
 

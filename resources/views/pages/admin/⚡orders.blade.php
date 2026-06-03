@@ -91,6 +91,7 @@ new #[Title('Local Orders')] class extends Component {
                         <th class="px-4 py-3 font-medium">{{ __('Customer') }}</th>
                         <th class="px-4 py-3 font-medium">{{ __('Phone') }}</th>
                         <th class="px-4 py-3 font-medium">{{ __('Total (LKR)') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ __('Payment') }}</th>
                         <th class="px-4 py-3 font-medium">{{ __('Status') }}</th>
                         <th class="px-4 py-3 font-medium">{{ __('Date') }}</th>
                         <th class="px-4 py-3 text-right font-medium">{{ __('Actions') }}</th>
@@ -104,6 +105,16 @@ new #[Title('Local Orders')] class extends Component {
                             <td class="px-4 py-3 text-sm">{{ $order->customer_phone }}</td>
                             <td class="px-4 py-3 font-medium">{{ number_format($order->total, 2) }}</td>
                             <td class="px-4 py-3">
+                                <div class="flex items-center gap-1">
+                                    <flux:badge size="sm" :color="$order->payment_method === 'payhere' ? 'blue' : 'zinc'">
+                                        {{ $order->payment_method === 'payhere' ? __('PayHere') : __('COD') }}
+                                    </flux:badge>
+                                    <flux:badge size="sm" :color="match($order->payment_status) { 'paid' => 'emerald', 'failed' => 'red', default => 'amber' }">
+                                        {{ ucfirst($order->payment_status) }}
+                                    </flux:badge>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3">
                                 <flux:badge size="sm" :color="match($order->status) { 'pending' => 'amber', 'confirmed' => 'blue', 'delivered' => 'emerald', 'cancelled' => 'red', default => 'zinc' }">
                                     {{ ucfirst($order->status) }}
                                 </flux:badge>
@@ -115,7 +126,7 @@ new #[Title('Local Orders')] class extends Component {
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-4 py-8 text-center text-sm text-zinc-500">
+                            <td colspan="8" class="px-4 py-8 text-center text-sm text-zinc-500">
                                 {{ __('No orders found.') }}
                             </td>
                         </tr>
@@ -136,6 +147,14 @@ new #[Title('Local Orders')] class extends Component {
                         <p><strong>{{ __('Name:') }}</strong> {{ $this->viewingOrder->customer_name }}</p>
                         <p><strong>{{ __('Phone:') }}</strong> {{ $this->viewingOrder->customer_phone }}</p>
                         <p><strong>{{ __('Address:') }}</strong> {{ $this->viewingOrder->customer_address }}</p>
+                        <p>
+                            <strong>{{ __('Payment:') }}</strong>
+                            {{ $this->viewingOrder->payment_method === 'payhere' ? __('Online (PayHere)') : __('Cash on Delivery') }}
+                            —
+                            <flux:badge size="sm" :color="match($this->viewingOrder->payment_status) { 'paid' => 'emerald', 'failed' => 'red', default => 'amber' }">
+                                {{ ucfirst($this->viewingOrder->payment_status) }}
+                            </flux:badge>
+                        </p>
                         @if ($this->viewingOrder->notes)
                             <p><strong>{{ __('Notes:') }}</strong> {{ $this->viewingOrder->notes }}</p>
                         @endif

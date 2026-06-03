@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\PayHereNotifyController;
+use App\Models\LocalOrder;
 use App\Models\SupplierPurchase;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
@@ -12,6 +15,32 @@ Route::livewire('/', 'pages::storefront.home')->name('home');
 Route::livewire('/cart', 'pages::storefront.cart')->name('storefront.cart');
 Route::livewire('/checkout', 'pages::storefront.checkout')->name('storefront.checkout');
 Route::livewire('/orders/{order}/confirmation', 'pages::storefront.order-success')->name('storefront.order.success');
+
+// PayHere payment redirects
+Route::get('/checkout/payhere/return/{order}', function (string $order) {
+    $localOrder = LocalOrder::where('order_number', $order)->first();
+
+    if (! $localOrder) {
+        return redirect()->route('home');
+    }
+
+    return redirect()->route('storefront.order.success', ['order' => $localOrder->order_number]);
+})->name('storefront.payhere.return');
+
+Route::get('/checkout/payhere/cancel/{order}', function (string $order) {
+    $localOrder = LocalOrder::where('order_number', $order)->first();
+
+    if ($localOrder && $localOrder->payment_status !== 'paid') {
+        $localOrder->update(['payment_status' => 'failed', 'status' => 'cancelled']);
+    }
+
+    return redirect()->route('storefront.checkout')->with('error', __('Payment was cancelled. You can try again or choose Cash on Delivery.'));
+})->name('storefront.payhere.cancel');
+
+// PayHere server notification (CSRF-exempt)
+Route::post('/payhere/notify', [PayHereNotifyController::class, 'handle'])
+    ->withoutMiddleware(VerifyCsrfToken::class)
+    ->name('payhere.notify');
 
 // Bulk export inquiry
 Route::livewire('/bulk-orders', 'pages::bulk-inquiry')->name('bulk.inquiry');
