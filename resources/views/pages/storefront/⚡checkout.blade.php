@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\SendOrderNotificationToOwner;
 use App\Models\LocalOrder;
 use App\Models\LocalOrderItem;
 use App\Models\Product;
@@ -82,6 +83,9 @@ new #[Layout('layouts.storefront')] #[Title('Checkout')] class extends Component
         });
 
         app(Cart::class)->clear();
+
+        // Send WhatsApp notification to owner
+        SendOrderNotificationToOwner::dispatch($order);
 
         // COD: redirect straight to success
         if ($this->payment_method === 'cod') {

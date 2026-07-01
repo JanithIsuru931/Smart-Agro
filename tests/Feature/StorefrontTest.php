@@ -1,8 +1,10 @@
 <?php
 
+use App\Jobs\SendOrderNotificationToOwner;
 use App\Models\LocalOrder;
 use App\Models\Product;
 use App\Services\Cart;
+use Illuminate\Support\Facades\Bus;
 use Livewire\Livewire;
 
 it('shows active products on the storefront', function () {
@@ -171,4 +173,20 @@ it('shows payhere payment status on the order success page', function () {
         ->assertOk()
         ->assertSee('Online Payment (PayHere)')
         ->assertSee('Paid');
+});
+
+it('dispatches WhatsApp notification when order is placed', function () {
+    Bus::fake();
+
+    $product = Product::factory()->create(['price' => 100, 'stock' => 10]);
+    app(Cart::class)->add($product->id, 2);
+
+    Livewire::test('pages::storefront.checkout')
+        ->set('customer_name', 'Test Customer')
+        ->set('customer_phone', '0771234567')
+        ->set('customer_address', 'Test Address')
+        ->set('payment_method', 'cod')
+        ->call('placeOrder');
+
+    Bus::assertDispatched(SendOrderNotificationToOwner::class);
 });
