@@ -3,6 +3,7 @@
 use App\Models\Employee;
 use App\Models\EmployeePayment;
 use Flux\Flux;
+use Illuminate\Support\Carbon;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
@@ -139,7 +140,25 @@ new #[Title('Employee Salary Log')] class extends Component {
             return;
         }
 
-        if ($this->calc_end_date < $this->calc_start_date) {
+        $today = Carbon::today()->toDateString();
+        $startDate = Carbon::parse($this->calc_start_date)->startOfDay();
+        $endDate = Carbon::parse($this->calc_end_date)->startOfDay();
+
+        if ($startDate->gt($today)) {
+            $this->calc_start_date = $today;
+            Flux::toast(variant: 'warning', text: __('Start date cannot be a future date. It has been reset to today.'));
+
+            return;
+        }
+
+        if ($endDate->gt($today)) {
+            $this->calc_end_date = $today;
+            Flux::toast(variant: 'warning', text: __('End date cannot be a future date. It has been reset to today.'));
+
+            return;
+        }
+
+        if ($endDate->lt($startDate)) {
             Flux::toast(variant: 'danger', text: __('End date must be on or after the start date.'));
 
             return;
@@ -295,8 +314,8 @@ new #[Title('Employee Salary Log')] class extends Component {
             </flux:select>
 
             <div class="grid gap-4 sm:grid-cols-2">
-                <flux:input wire:model="calc_start_date" type="date" :label="__('Start Date')" />
-                <flux:input wire:model="calc_end_date" type="date" :label="__('End Date')" />
+                <flux:input wire:model="calc_start_date" type="date" :label="__('Start Date')" max="{{ now()->format('Y-m-d') }}" />
+                <flux:input wire:model="calc_end_date" type="date" :label="__('End Date')" max="{{ now()->format('Y-m-d') }}" />
             </div>
 
             <flux:button wire:click="calculateSalary" icon="calculator" class="w-full">

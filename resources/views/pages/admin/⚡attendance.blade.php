@@ -3,6 +3,7 @@
 use App\Models\Employee;
 use App\Models\EmployeeAttendance;
 use Flux\Flux;
+use Illuminate\Support\Carbon;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -107,6 +108,14 @@ new #[Title('Employee Attendance')] class extends Component {
 
     public function updatedSelectedDate(): void
     {
+        $today = now()->startOfDay();
+        $selectedDate = Carbon::parse($this->selectedDate)->startOfDay();
+
+        if ($selectedDate->gt($today)) {
+            $this->selectedDate = $today->toDateString();
+            Flux::toast(variant: 'warning', text: __('Future attendance dates are not allowed.'));
+        }
+
         $this->loadAttendanceForDate();
     }
 
@@ -153,6 +162,17 @@ new #[Title('Employee Attendance')] class extends Component {
 
     public function saveAttendance(): void
     {
+        $today = now()->startOfDay();
+        $selectedDate = Carbon::parse($this->selectedDate)->startOfDay();
+
+        if ($selectedDate->gt($today)) {
+            $this->selectedDate = $today->toDateString();
+            $this->loadAttendanceForDate();
+            Flux::toast(variant: 'warning', text: __('Future attendance dates are not allowed.'));
+
+            return;
+        }
+
         $saved = 0;
 
         foreach ($this->statuses as $employeeId => $status) {
@@ -254,7 +274,7 @@ new #[Title('Employee Attendance')] class extends Component {
         @if ($tab === 'mark')
             <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div class="w-full md:w-64">
-                    <flux:input wire:model.live="selectedDate" type="date" :label="__('Date')" />
+                    <flux:input wire:model.live="selectedDate" type="date" :label="__('Date')" max="{{ now()->format('Y-m-d') }}" />
                 </div>
                 <div class="flex gap-2">
                     <flux:button wire:click="markAllPresent" icon="check-circle">
