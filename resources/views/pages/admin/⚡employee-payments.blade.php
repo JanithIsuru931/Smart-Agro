@@ -26,17 +26,22 @@ new #[Title('Employee Salary Log')] class extends Component {
     // Calculate salary modal properties
     public ?int $calc_employee_id = null;
 
-    public string $calc_month = '';
+    public string $calc_start_date = '';
 
-    public ?string $pay_month = null;
+    public string $calc_end_date = '';
 
-    /** @var array{present_days: int, half_days: int, absent_days: int, total: float}|null */
+    public ?string $pay_start_date = null;
+
+    public ?string $pay_end_date = null;
+
+    /** @var array{present_days: int, half_days: int, absent_days: int, total: float, basic_salary: float, attendance_bonus: float, final_total_salary: float, start_date: string, end_date: string, employee_id: int, employee_name: string}|null */
     public ?array $calcResult = null;
 
     public function mount(): void
     {
         $this->payment_date = now()->format('Y-m-d');
-        $this->calc_month = now()->format('Y-m');
+        $this->calc_start_date = now()->startOfMonth()->toDateString();
+        $this->calc_end_date = now()->endOfMonth()->toDateString();
     }
 
     #[Computed]
@@ -91,11 +96,9 @@ new #[Title('Employee Salary Log')] class extends Component {
             EmployeePayment::create($data);
             Flux::toast(variant: 'success', text: __('Payment logged.'));
 
-            if ($this->pay_month) {
-                [$year, $month] = explode('-', $this->pay_month);
+            if ($this->pay_start_date && $this->pay_end_date) {
                 \App\Models\EmployeeAttendance::where('employee_id', $this->employee_id)
-                    ->whereYear('date', $year)
-                    ->whereMonth('date', $month)
+                    ->whereBetween('date', [$this->pay_start_date, $this->pay_end_date])
                     ->where('is_paid', false)
                     ->update(['is_paid' => true]);
             }
@@ -116,7 +119,8 @@ new #[Title('Employee Salary Log')] class extends Component {
     public function openCalculate(): void
     {
         $this->calc_employee_id = null;
-        $this->calc_month = now()->format('Y-m');
+        $this->calc_start_date = now()->startOfMonth()->toDateString();
+        $this->calc_end_date = now()->endOfMonth()->toDateString();
         $this->calcResult = null;
         Flux::modal('calculate-salary')->show();
     }
@@ -129,10 +133,21 @@ new #[Title('Employee Salary Log')] class extends Component {
             return;
         }
 
-        $employee = Employee::findOrFail($this->calc_employee_id);
-        [$year, $month] = explode('-', $this->calc_month);
+        if (! $this->calc_start_date || ! $this->calc_end_date) {
+            Flux::toast(variant: 'danger', text: __('Please select both start and end dates.'));
 
-        $this->calcResult = $employee->calculateSalary($year, $month);
+            return;
+        }
+
+        if ($this->calc_end_date < $this->calc_start_date) {
+            Flux::toast(variant: 'danger', text: __('End date must be on or after the start date.'));
+
+            return;
+        }
+
+        $employee = Employee::findOrFail($this->calc_employee_id);
+
+        $this->calcResult = $employee->calculateSalaryFromRange($this->calc_start_date, $this->calc_end_date);
     }
 
     public function applyCalculatedSalary(): void
@@ -143,14 +158,13 @@ new #[Title('Employee Salary Log')] class extends Component {
 
         $this->resetForm();
         $this->employee_id = $this->calc_employee_id;
-        $this->amount = $this->calcResult['total'];
-        $this->pay_month = $this->calc_month;
-        [$year, $month] = explode('-', $this->calc_month);
+        $this->amount = $this->calcResult['final_total_salary'];
+        $this->pay_start_date = $this->calc_start_date;
+        $this->pay_end_date = $this->calc_end_date;
         $this->payment_date = now()->format('Y-m-d');
-        $employee = Employee::find($this->calc_employee_id);
-        $this->notes = __('Salary for :month/:year — :present present, :half half-day, :absent absent', [
-            'month' => $month,
-            'year' => $year,
+        $this->notes = __('Salary from :start to :end — :present present, :half half-day, :absent absent', [
+            'start' => $this->calc_start_date,
+            'end' => $this->calc_end_date,
             'present' => $this->calcResult['present_days'],
             'half' => $this->calcResult['half_days'],
             'absent' => $this->calcResult['absent_days'],
@@ -167,7 +181,8 @@ new #[Title('Employee Salary Log')] class extends Component {
         $this->amount = 0;
         $this->payment_date = now()->format('Y-m-d');
         $this->notes = '';
-        $this->pay_month = null;
+        $this->pay_start_date = null;
+        $this->pay_end_date = null;
         $this->resetErrorBag();
     }
 }; ?>
@@ -279,7 +294,10 @@ new #[Title('Employee Salary Log')] class extends Component {
                 @endforeach
             </flux:select>
 
-            <flux:input wire:model="calc_month" type="month" :label="__('Month')" />
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:input wire:model="calc_start_date" type="date" :label="__('Start Date')" />
+                <flux:input wire:model="calc_end_date" type="date" :label="__('End Date')" />
+            </div>
 
             <flux:button wire:click="calculateSalary" icon="calculator" class="w-full">
                 {{ __('Calculate') }}
@@ -287,26 +305,41 @@ new #[Title('Employee Salary Log')] class extends Component {
 
             @if ($calcResult)
                 <div class="rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
-                    <flux:heading size="md" class="mb-3 !font-semibold">{{ __('Attendance Breakdown') }}</flux:heading>
+                    <flux:heading size="md" class="mb-3 !font-semibold">{{ __('Salary Report') }}</flux:heading>
 
-                    <div class="grid grid-cols-3 gap-3 text-center">
-                        <div class="rounded-lg bg-emerald-50 p-3 dark:bg-emerald-900/20">
-                            <div class="text-2xl font-bold text-emerald-600">{{ $calcResult['present_days'] }}</div>
-                            <div class="text-xs text-emerald-600">{{ __('Present') }}</div>
+                    <div class="grid gap-3 text-sm">
+                        <div class="flex items-center justify-between rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800">
+                            <span class="text-zinc-500">{{ __('Employee ID') }}</span>
+                            <span class="font-semibold">{{ $calcResult['employee_id'] }}</span>
                         </div>
-                        <div class="rounded-lg bg-amber-50 p-3 dark:bg-amber-900/20">
-                            <div class="text-2xl font-bold text-amber-500">{{ $calcResult['half_days'] }}</div>
-                            <div class="text-xs text-amber-500">{{ __('Half Day') }}</div>
+                        <div class="flex items-center justify-between rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800">
+                            <span class="text-zinc-500">{{ __('Employee Name') }}</span>
+                            <span class="font-semibold">{{ $calcResult['employee_name'] }}</span>
                         </div>
-                        <div class="rounded-lg bg-red-50 p-3 dark:bg-red-900/20">
-                            <div class="text-2xl font-bold text-red-500">{{ $calcResult['absent_days'] }}</div>
-                            <div class="text-xs text-red-500">{{ __('Absent') }}</div>
+                        <div class="flex items-center justify-between rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800">
+                            <span class="text-zinc-500">{{ __('Start Date') }}</span>
+                            <span class="font-semibold">{{ $calcResult['start_date'] }}</span>
                         </div>
-                    </div>
-
-                    <div class="mt-4 flex items-center justify-between rounded-lg bg-zinc-100 p-3 dark:bg-zinc-800">
-                        <flux:text class="font-medium">{{ __('Calculated Salary') }}</flux:text>
-                        <flux:heading size="lg" class="!font-bold">LKR {{ number_format($calcResult['total'], 2) }}</flux:heading>
+                        <div class="flex items-center justify-between rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800">
+                            <span class="text-zinc-500">{{ __('End Date') }}</span>
+                            <span class="font-semibold">{{ $calcResult['end_date'] }}</span>
+                        </div>
+                        <div class="flex items-center justify-between rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800">
+                            <span class="text-zinc-500">{{ __('Total Full Day Present') }}</span>
+                            <span class="font-semibold">{{ $calcResult['present_days'] }}</span>
+                        </div>
+                        <div class="flex items-center justify-between rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800">
+                            <span class="text-zinc-500">{{ __('Basic Salary') }}</span>
+                            <span class="font-semibold">LKR {{ number_format($calcResult['basic_salary'], 2) }}</span>
+                        </div>
+                        <div class="flex items-center justify-between rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800">
+                            <span class="text-zinc-500">{{ __('Attendance Bonus') }}</span>
+                            <span class="font-semibold">LKR {{ number_format($calcResult['attendance_bonus'], 2) }}</span>
+                        </div>
+                        <div class="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-900/40 dark:bg-emerald-900/20">
+                            <span class="font-medium text-emerald-700 dark:text-emerald-400">{{ __('Final Total Salary') }}</span>
+                            <span class="font-bold text-emerald-700 dark:text-emerald-400">LKR {{ number_format($calcResult['final_total_salary'], 2) }}</span>
+                        </div>
                     </div>
                 </div>
 

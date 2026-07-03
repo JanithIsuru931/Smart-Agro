@@ -145,6 +145,68 @@ it('excludes already paid attendance from salary calculation', function () {
     expect($result['total'])->toBe(2000.0);
 });
 
+it('adds an attendance bonus when seven consecutive full-day presents fall in the selected date range', function () {
+    $employee = Employee::factory()->create(['daily_rate' => 2000]);
+
+    foreach (range(1, 7) as $day) {
+        EmployeeAttendance::factory()->present()->create([
+            'employee_id' => $employee->id,
+            'date' => '2026-06-'.str_pad((string) $day, 2, '0', STR_PAD_LEFT),
+        ]);
+    }
+
+    $result = $employee->calculateSalaryFromRange('2026-06-01', '2026-06-07');
+
+    expect($result['present_days'])->toBe(7);
+    expect($result['basic_salary'])->toBe(14000.0);
+    expect($result['attendance_bonus'])->toBe(1000.0);
+    expect($result['final_total_salary'])->toBe(15000.0);
+});
+
+it('does not add an attendance bonus when the present days are fewer than seven consecutive days', function () {
+    $employee = Employee::factory()->create(['daily_rate' => 2000]);
+
+    foreach (range(1, 6) as $day) {
+        EmployeeAttendance::factory()->present()->create([
+            'employee_id' => $employee->id,
+            'date' => '2026-06-'.str_pad((string) $day, 2, '0', STR_PAD_LEFT),
+        ]);
+    }
+
+    $result = $employee->calculateSalaryFromRange('2026-06-01', '2026-06-06');
+
+    expect($result['present_days'])->toBe(6);
+    expect($result['attendance_bonus'])->toBe(0.0);
+    expect($result['final_total_salary'])->toBe(12000.0);
+});
+
+it('does not add an attendance bonus when a seven-day streak includes a half day or absent record', function () {
+    $employee = Employee::factory()->create(['daily_rate' => 2000]);
+
+    foreach (range(1, 3) as $day) {
+        EmployeeAttendance::factory()->present()->create([
+            'employee_id' => $employee->id,
+            'date' => '2026-06-'.str_pad((string) $day, 2, '0', STR_PAD_LEFT),
+        ]);
+    }
+
+    EmployeeAttendance::factory()->halfDay()->create(['employee_id' => $employee->id, 'date' => '2026-06-04']);
+
+    foreach (range(5, 7) as $day) {
+        EmployeeAttendance::factory()->present()->create([
+            'employee_id' => $employee->id,
+            'date' => '2026-06-'.str_pad((string) $day, 2, '0', STR_PAD_LEFT),
+        ]);
+    }
+
+    $result = $employee->calculateSalaryFromRange('2026-06-01', '2026-06-07');
+
+    expect($result['present_days'])->toBe(6);
+    expect($result['half_days'])->toBe(1);
+    expect($result['attendance_bonus'])->toBe(0.0);
+    expect($result['final_total_salary'])->toBe(13000.0);
+});
+
 it('cascades delete attendance when employee is deleted', function () {
     $employee = Employee::factory()->create();
 
