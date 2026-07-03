@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\BulkInquiry;
+use App\Models\EmployeePayment;
 use App\Models\LocalOrder;
 use App\Models\Product;
 use App\Models\Supplier;
@@ -71,6 +72,9 @@ new #[Title('Admin Dashboard')] class extends Component {
         $weeklyPurchases = (float) SupplierPurchase::where('purchase_date', '>=', $weekStart)
             ->sum('total_paid');
 
+        $weeklyEmployeePayments = (float) EmployeePayment::where('payment_date', '>=', $weekStart)
+            ->sum('amount');
+
         $monthlyRevenue = (float) LocalOrder::whereIn('status', ['confirmed', 'delivered'])
             ->where('created_at', '>=', $monthStart)
             ->sum('total');
@@ -78,11 +82,16 @@ new #[Title('Admin Dashboard')] class extends Component {
         $monthlyPurchases = (float) SupplierPurchase::where('purchase_date', '>=', $monthStart)
             ->sum('total_paid');
 
+        $monthlyEmployeePayments = (float) EmployeePayment::where('payment_date', '>=', $monthStart)
+            ->sum('amount');
+
         return [
-            'weekly' => $weeklyRevenue - $weeklyPurchases,
-            'monthly' => $monthlyRevenue - $monthlyPurchases,
+            'weekly' => $weeklyRevenue - $weeklyPurchases - $weeklyEmployeePayments,
+            'monthly' => $monthlyRevenue - $monthlyPurchases - $monthlyEmployeePayments,
             'weekly_purchases' => $weeklyPurchases,
             'monthly_purchases' => $monthlyPurchases,
+            'weekly_employee_payments' => $weeklyEmployeePayments,
+            'monthly_employee_payments' => $monthlyEmployeePayments,
         ];
     }
 
@@ -153,7 +162,7 @@ new #[Title('Admin Dashboard')] class extends Component {
                 <flux:heading size="xl" class="mt-1 !font-bold {{ $this->netRevenue['weekly'] >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400' }}">
                     {{ $this->netRevenue['weekly'] >= 0 ? '' : '-' }}{{ number_format(abs($this->netRevenue['weekly']), 2) }}
                 </flux:heading>
-                <flux:text class="text-xs text-zinc-500">{{ __('Sales minus purchases this week') }}</flux:text>
+                <flux:text class="text-xs text-zinc-500">{{ __('Sales minus purchases & employee payments this week') }}</flux:text>
             </flux:card>
             <flux:card class="relative overflow-hidden">
                 <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-emerald-100/50 dark:bg-emerald-900/20"></div>
@@ -161,7 +170,7 @@ new #[Title('Admin Dashboard')] class extends Component {
                 <flux:heading size="xl" class="mt-1 !font-bold {{ $this->netRevenue['monthly'] >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400' }}">
                     {{ $this->netRevenue['monthly'] >= 0 ? '' : '-' }}{{ number_format(abs($this->netRevenue['monthly']), 2) }}
                 </flux:heading>
-                <flux:text class="text-xs text-zinc-500">{{ __('Sales minus purchases this month') }}</flux:text>
+                <flux:text class="text-xs text-zinc-500">{{ __('Sales minus purchases & employee payments this month') }}</flux:text>
             </flux:card>
         </div>
 
@@ -175,6 +184,19 @@ new #[Title('Admin Dashboard')] class extends Component {
                 <flux:text class="text-sm font-medium">{{ __('Paid to Suppliers This Month (LKR)') }}</flux:text>
                 <flux:heading size="xl" class="mt-1 !font-bold">{{ number_format($this->netRevenue['monthly_purchases'], 2) }}</flux:heading>
                 <flux:text class="text-xs text-zinc-500">{{ __('Supplier purchases this month') }}</flux:text>
+            </flux:card>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+            <flux:card>
+                <flux:text class="text-sm font-medium">{{ __('Employee Payments This Week (LKR)') }}</flux:text>
+                <flux:heading size="xl" class="mt-1 !font-bold">{{ number_format($this->netRevenue['weekly_employee_payments'], 2) }}</flux:heading>
+                <flux:text class="text-xs text-zinc-500">{{ __('Employee payments this week') }}</flux:text>
+            </flux:card>
+            <flux:card>
+                <flux:text class="text-sm font-medium">{{ __('Employee Payments This Month (LKR)') }}</flux:text>
+                <flux:heading size="xl" class="mt-1 !font-bold">{{ number_format($this->netRevenue['monthly_employee_payments'], 2) }}</flux:heading>
+                <flux:text class="text-xs text-zinc-500">{{ __('Employee payments this month') }}</flux:text>
             </flux:card>
         </div>
 
