@@ -43,6 +43,7 @@ class PayHereNotifyController extends Controller
         // status_code 2 = success, -1 = pending, -2 = canceled, -3 = failed/chargedback
         if ((int) $statusCode === 2) {
             $order->update([
+                'status' => 'confirmed',
                 'payment_status' => 'paid',
                 'payhere_payment_id' => $paymentId,
             ]);

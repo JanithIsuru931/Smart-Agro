@@ -24,6 +24,15 @@ Route::get('/checkout/payhere/return/{order}', function (string $order) {
         return redirect()->route('home');
     }
 
+    // PayHere only redirects here on successful payment; update status
+    // in case the server-to-server notify callback hasn't arrived yet.
+    if ($localOrder->payment_status !== 'paid') {
+        $localOrder->update([
+            'status' => 'confirmed',
+            'payment_status' => 'paid',
+        ]);
+    }
+
     return redirect()->route('storefront.order.success', ['order' => $localOrder->order_number]);
 })->name('storefront.payhere.return');
 
