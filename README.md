@@ -2,9 +2,7 @@
 
 <div align="center">
 
-### Cover Image Placeholder
-
-Add your project banner or hero image here.
+<img width="1712" height="962" alt="Screenshot From 2026-07-04 08-57-07" src="https://github.com/user-attachments/assets/244badf3-03be-42a2-b58a-b551d2164f52" />
 
 </div>
 
