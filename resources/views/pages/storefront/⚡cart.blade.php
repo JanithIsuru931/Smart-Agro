@@ -63,8 +63,12 @@ new #[Layout('layouts.storefront')] #[Title('Your Cart')] class extends Componen
             <div class="space-y-3 lg:col-span-2">
                 @foreach ($this->lines as $line)
                     <div class="flex items-center gap-4 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
-                        <div class="flex size-20 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-100 to-amber-100 dark:from-emerald-900/40 dark:to-amber-900/40">
-                            <flux:icon.sparkles class="size-10 text-emerald-600 dark:text-emerald-400" />
+                        <div class="relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-emerald-100 to-amber-100 dark:from-emerald-900/40 dark:to-amber-900/40">
+                            @if ($line['product']->image)
+                                <img src="{{ asset('storage/'.$line['product']->image) }}" alt="{{ $line['product']->name }}" class="absolute inset-0 size-full object-cover">
+                            @else
+                                <flux:icon.sparkles class="size-10 text-emerald-600 dark:text-emerald-400" />
+                            @endif
                         </div>
                         <div class="flex-1">
                             <flux:heading class="!font-semibold">{{ $line['product']->name }}</flux:heading>
