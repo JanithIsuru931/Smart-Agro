@@ -11,7 +11,7 @@ new #[Layout('layouts.storefront')] #[Title('Bulk Orders')] class extends Compon
     #[Validate('required|string|max:255')]
     public string $buyer_name = '';
 
-    #[Validate('nullable|string|max:255')]
+    #[Validate('required|string|max:255')]
     public string $company = '';
 
     #[Validate('required|email|max:255')]
@@ -23,8 +23,8 @@ new #[Layout('layouts.storefront')] #[Title('Bulk Orders')] class extends Compon
     #[Validate('required|string|max:100')]
     public string $country = '';
 
-    #[Validate('required|integer|min:100')]
-    public int $quantity = 1000;
+    #[Validate('required|integer|min:201')]
+    public int $quantity = 250;
 
     #[Validate('nullable|string|max:255')]
     public string $shipping_port = '';
@@ -94,7 +94,7 @@ new #[Layout('layouts.storefront')] #[Title('Bulk Orders')] class extends Compon
                         <li>• {{ __('Direct from Sri Lankan plantations') }}</li>
                         <li>• {{ __('Quality-assured, premium-grade king coconut') }}</li>
                         <li>• {{ __('FOB and CIF pricing available (USD)') }}</li>
-                        <li>• {{ __('Minimum order: 1,000 units') }}</li>
+                        <li>• {{ __('Minimum order: > 200 units') }}</li>
                     </ul>
                 </div>
             </div>
@@ -104,11 +104,11 @@ new #[Layout('layouts.storefront')] #[Title('Bulk Orders')] class extends Compon
 
                 <div class="grid gap-4 md:grid-cols-2">
                     <flux:input wire:model="buyer_name" :label="__('Your Name')" required />
-                    <flux:input wire:model="company" :label="__('Company (optional)')" />
+                    <flux:input wire:model="company" :label="__('Company')" required />
                     <flux:input wire:model="email" type="email" :label="__('Email')" required />
                     <flux:input wire:model="phone" type="tel" :label="__('Phone (optional)')" />
                     <flux:input wire:model="country" :label="__('Country')" required />
-                    <flux:input wire:model="quantity" type="number" min="100" :label="__('Quantity (units)')" required />
+                    <flux:input wire:model="quantity" type="number" min="201" :label="__('Quantity (units)')" required />
                     <flux:input wire:model="shipping_port" :label="__('Shipping Port (optional)')" placeholder="e.g. Port of Hamburg" />
                     <flux:input wire:model="preferred_delivery_date" type="date" :label="__('Preferred Delivery Date (optional)')" />
                 </div>
