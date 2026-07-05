@@ -32,15 +32,23 @@
                 viewable
             />
 
-            <!-- Remember Me -->
-            <div class="flex items-center justify-between">
-                <flux:checkbox name="remember" :label="__('Remember me')" :checked="old('remember')" />
+            <!-- Remember Me & Forgot Password -->
+            <div x-data="{ showForgotCard: false }" class="w-full">
+                <div class="flex items-center justify-between">
+                    <flux:checkbox name="remember" :label="__('Remember me')" :checked="old('remember')" />
 
-                @if (Route::has('password.request'))
-                    <flux:link class="text-sm" :href="route('password.request')" wire:navigate>
+                    <button type="button" @click="showForgotCard = !showForgotCard" class="text-sm text-zinc-500 transition-colors hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200">
                         {{ __('Forgot your password?') }}
-                    </flux:link>
-                @endif
+                    </button>
+                </div>
+
+                <div x-show="showForgotCard" x-collapse style="display: none;" class="mt-4">
+                    <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/50">
+                        <flux:text class="text-sm text-center">
+                            {{ __('Please contact the site administrator to request a password reset.') }}
+                        </flux:text>
+                    </div>
+                </div>
             </div>
 
             <div class="flex items-center justify-end">
