@@ -2,10 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\BulkInquiry;
 use App\Models\Product;
-use App\Models\Supplier;
-use App\Models\SupplierPurchase;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\File;
@@ -82,16 +79,5 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        Supplier::factory()
-            ->count(4)
-            ->create()
-            ->each(function (Supplier $supplier) {
-                SupplierPurchase::factory()
-                    ->count(rand(2, 5))
-                    ->for($supplier)
-                    ->create();
-            });
-
-        BulkInquiry::factory()->count(3)->create();
     }
 }
