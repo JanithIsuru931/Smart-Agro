@@ -2,12 +2,16 @@
 
 use App\Models\Employee;
 use Flux\Flux;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 new #[Title('Manage Employees')] class extends Component {
+    use WithFileUploads;
+
     public ?int $editingId = null;
 
     #[Validate('required|string|max:255')]
@@ -15,6 +19,14 @@ new #[Title('Manage Employees')] class extends Component {
 
     #[Validate('required|string|max:30|regex:/^07\d{2}\s?\d{3}\s?\d{3}$/')]
     public string $phone = '';
+
+    #[Validate('nullable|string|max:50')]
+    public string $id_card = '';
+
+    #[Validate('nullable|image|mimes:jpg,jpeg,png,webp|max:2048')]
+    public $id_photo = null;
+
+    public ?string $currentIdPhoto = null;
 
     #[Validate('required|string|max:255')]
     public string $location = '';
@@ -58,6 +70,9 @@ new #[Title('Manage Employees')] class extends Component {
         $this->editingId = $employee->id;
         $this->name = $employee->name;
         $this->phone = $employee->phone ?? '';
+        $this->id_card = $employee->id_card ?? '';
+        $this->currentIdPhoto = $employee->id_photo;
+        $this->id_photo = null;
         $this->location = $employee->location ?? '';
         $this->notes = $employee->notes ?? '';
         $this->daily_rate = (float) $employee->daily_rate;
@@ -68,12 +83,26 @@ new #[Title('Manage Employees')] class extends Component {
 
     public function save(): void
     {
-        $data = $this->validate();
+        $data = collect($this->validate())->except('id_photo')->all();
+        $idPhotoPath = $this->id_photo?->store('employees/id_cards', 'public');
 
         if ($this->editingId) {
-            Employee::findOrFail($this->editingId)->update($data);
+            $employee = Employee::findOrFail($this->editingId);
+            $oldPhoto = $employee->id_photo;
+
+            if ($idPhotoPath) {
+                $data['id_photo'] = $idPhotoPath;
+            }
+
+            $employee->update($data);
+
+            if ($idPhotoPath && $oldPhoto) {
+                Storage::disk('public')->delete($oldPhoto);
+            }
+
             Flux::toast(variant: 'success', text: __('Employee updated.'));
         } else {
+            $data['id_photo'] = $idPhotoPath;
             Employee::create($data);
             Flux::toast(variant: 'success', text: __('Employee added.'));
         }
@@ -97,6 +126,9 @@ new #[Title('Manage Employees')] class extends Component {
         $this->editingId = null;
         $this->name = '';
         $this->phone = '';
+        $this->id_card = '';
+        $this->id_photo = null;
+        $this->currentIdPhoto = null;
         $this->location = '';
         $this->notes = '';
         $this->daily_rate = 0;
@@ -129,6 +161,7 @@ new #[Title('Manage Employees')] class extends Component {
                     <tr class="text-left text-sm">
                         <th class="px-4 py-3 font-medium">{{ __('Name') }}</th>
                         <th class="px-4 py-3 font-medium">{{ __('Phone') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ __('ID Card') }}</th>
                         <th class="px-4 py-3 font-medium">{{ __('Location') }}</th>
                         <th class="px-4 py-3 font-medium">{{ __('Daily Rate') }}</th>
                         <th class="px-4 py-3 font-medium">{{ __('Attendance (Month)') }}</th>
@@ -141,12 +174,26 @@ new #[Title('Manage Employees')] class extends Component {
                     @forelse ($this->employees as $employee)
                         <tr>
                             <td class="px-4 py-3">
-                                <div class="font-medium">{{ $employee->name }}</div>
-                                @if ($employee->notes)
-                                    <div class="text-xs text-zinc-500">{{ \Illuminate\Support\Str::limit($employee->notes, 50) }}</div>
-                                @endif
+                                <div class="relative inline-block group">
+                                    <div class="font-medium">{{ $employee->name }}</div>
+                                    @if ($employee->notes)
+                                        <div class="text-xs text-zinc-500">{{ \Illuminate\Support\Str::limit($employee->notes, 50) }}</div>
+                                    @endif
+
+                                    <div class="absolute left-0 top-full z-50 mt-2 hidden w-80 rounded-xl border border-zinc-200 bg-white p-3 text-sm text-zinc-700 shadow-xl transition duration-150 ease-in-out group-hover:block dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100">
+                                        <div class="font-semibold mb-2">{{ __('Employee details') }}</div>
+                                        <div class="space-y-1">
+                                            <div><span class="font-medium">{{ __('Phone') }}:</span> {{ $employee->phone ?: '-' }}</div>
+                                            <div><span class="font-medium">{{ __('ID Card') }}:</span> {{ $employee->id_card ?: '-' }}</div>
+                                            <div><span class="font-medium">{{ __('Location') }}:</span> {{ $employee->location ?: '-' }}</div>
+                                            <div><span class="font-medium">{{ __('Daily Rate') }}:</span> {{ number_format($employee->daily_rate, 2) }}</div>
+                                            <div><span class="font-medium">{{ __('Status') }}:</span> {{ $employee->is_active ? __('Active') : __('Inactive') }}</div>
+                                        </div>
+                                    </div>
+                                </div>
                             </td>
                             <td class="px-4 py-3 text-sm">{{ $employee->phone ?: '-' }}</td>
+                            <td class="px-4 py-3 text-sm">{{ $employee->id_card ?: '-' }}</td>
                             <td class="px-4 py-3 text-sm">{{ $employee->location ?: '-' }}</td>
                             <td class="px-4 py-3 text-sm">{{ number_format($employee->daily_rate, 2) }}</td>
                             <td class="px-4 py-3">
@@ -190,6 +237,26 @@ new #[Title('Manage Employees')] class extends Component {
             @error('phone')
                 <p class="text-sm text-red-600">{{ $message }}</p>
             @enderror
+            <flux:input wire:model="id_card" :label="__('ID Card Number')" :placeholder="__('Optional: NIC / Passport')" />
+            @error('id_card')
+                <p class="text-sm text-red-600">{{ $message }}</p>
+            @enderror
+            <div class="space-y-2">
+                <label class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{{ __('ID Photo') }}</label>
+                <input wire:model="id_photo" type="file" accept="image/*" class="block w-full cursor-pointer rounded-lg border border-zinc-300 bg-white text-sm text-zinc-900 shadow-sm file:mr-4 file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:file:bg-zinc-100 dark:file:text-zinc-900 dark:hover:file:bg-zinc-200">
+                @error('id_photo')
+                    <p class="text-sm text-red-600">{{ $message }}</p>
+                @enderror
+                @if ($currentIdPhoto)
+                    <div class="flex items-center gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
+                        <img src="{{ asset('storage/'.$currentIdPhoto) }}" alt="{{ __('Current ID Photo') }}" class="h-16 w-16 rounded-lg object-cover">
+                        <div>
+                            <div class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ __('Current ID Photo') }}</div>
+                            <div class="text-xs text-zinc-500">{{ __('Upload a new file to replace it.') }}</div>
+                        </div>
+                    </div>
+                @endif
+            </div>
             <flux:input wire:model="location" :label="__('Location')" required />
             @error('location')
                 <p class="text-sm text-red-600">{{ $message }}</p>

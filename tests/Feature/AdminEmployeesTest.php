@@ -25,10 +25,11 @@ it('creates an employee through the admin form', function () {
     Livewire::test('pages::admin.employees')
         ->set('name', 'Ruwan Fernando')
         ->set('phone', '0771234567')
+        ->set('id_card', '951234567V')
         ->set('location', 'Kandy')
         ->call('save');
 
-    expect(Employee::where('name', 'Ruwan Fernando')->exists())->toBeTrue();
+    expect(Employee::where('name', 'Ruwan Fernando')->where('id_card', '951234567V')->exists())->toBeTrue();
 });
 
 it('logs an employee payment', function () {

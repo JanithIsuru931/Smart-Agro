@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
-#[Fillable(['name', 'phone', 'location', 'notes', 'daily_rate', 'half_day_rate', 'is_active'])]
+#[Fillable(['name', 'phone', 'id_card', 'id_photo', 'location', 'notes', 'daily_rate', 'half_day_rate', 'is_active'])]
 class Employee extends Model
 {
     /** @use HasFactory<EmployeeFactory> */
