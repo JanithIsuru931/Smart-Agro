@@ -1,72 +1,85 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
-    <head>
-        @include('partials.head')
-    </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-900">
-        @php
-            $cartCount = app(\App\Services\Cart::class)->count();
-        @endphp
+<head>
+    @include('partials.head')
+</head>
 
-        <flux:header container class="border-b border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-            <a href="{{ route('home') }}" wire:navigate class="flex items-center gap-2">
-                <flux:icon.sparkles class="size-6 text-emerald-600" />
-                <flux:heading size="lg" class="!font-bold">Smart Agro</flux:heading>
+<body class="min-h-screen w-full overflow-x-hidden bg-white dark:bg-zinc-950">
+    @php
+        $cartCount = app(\App\Services\Cart::class)->count();
+    @endphp
+
+    <header class="sticky top-0 z-50 w-full border-b border-emerald-500/20 bg-zinc-950/90 shadow-lg shadow-emerald-950/20 backdrop-blur">
+        <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+            <a href="{{ route('home') }}" wire:navigate class="group flex items-center justify-center gap-3 md:justify-start">
+                <div class="flex size-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 via-lime-400 to-amber-300 shadow-lg shadow-emerald-500/25 transition group-hover:scale-105">
+                    <flux:icon.sparkles class="size-6 text-zinc-950" />
+                </div>
+
+                <div class="leading-tight">
+                    <div class="bg-gradient-to-r from-emerald-300 via-lime-200 to-amber-200 bg-clip-text text-2xl font-black tracking-tight text-transparent">
+                        Smart Agro
+                    </div>
+                    <div class="text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-400/80">
+                        Fresh King Coconut
+                    </div>
+                </div>
             </a>
 
-            <flux:navbar class="-mb-px max-md:hidden ms-6">
-                <flux:navbar.item :href="route('home')" :current="request()->routeIs('home')" wire:navigate>
-                    {{ __('Shop') }}
-                </flux:navbar.item>
-                <flux:navbar.item :href="route('bulk.inquiry')" :current="request()->routeIs('bulk.inquiry')" wire:navigate>
-                    {{ __('Bulk Orders') }}
-                </flux:navbar.item>
-                <flux:navbar.item :href="route('about')" :current="request()->routeIs('about')" wire:navigate>
-                    {{ __('About') }}
-                </flux:navbar.item>
-            </flux:navbar>
+            <nav class="flex w-full flex-wrap items-center justify-center gap-2 text-sm font-semibold md:w-auto md:justify-end">
+                <a href="{{ route('home') }}" wire:navigate class="rounded-full px-4 py-2 text-zinc-100 transition hover:bg-emerald-500 hover:text-white hover:shadow-lg hover:shadow-emerald-500/25">
+                    Shop
+                </a>
 
-            <flux:spacer />
+                <a href="{{ route('bulk.inquiry') }}" wire:navigate class="rounded-full px-4 py-2 text-zinc-100 transition hover:bg-amber-500 hover:text-zinc-950 hover:shadow-lg hover:shadow-amber-500/25">
+                    Bulk Orders
+                </a>
 
-            <flux:navbar class="space-x-0.5 rtl:space-x-reverse">
-                <flux:tooltip :content="__('Cart')" position="bottom">
-                    <flux:navbar.item
-                        icon="shopping-cart"
-                        :href="route('storefront.cart')"
-                        :badge="$cartCount > 0 ? $cartCount : null"
-                        :label="__('Cart')"
-                        wire:navigate
-                    />
-                </flux:tooltip>
+                <a href="{{ route('about') }}" wire:navigate class="rounded-full px-4 py-2 text-zinc-100 transition hover:bg-lime-500 hover:text-zinc-950 hover:shadow-lg hover:shadow-lime-500/25">
+                    About
+                </a>
+
+                <a href="{{ route('storefront.cart') }}" wire:navigate
+                   class="relative inline-flex size-11 items-center justify-center rounded-full bg-zinc-900 text-zinc-100 ring-1 ring-zinc-700 transition hover:bg-emerald-500 hover:text-white hover:ring-emerald-400 hover:shadow-lg hover:shadow-emerald-500/25"
+                   aria-label="Cart">
+                    <flux:icon.shopping-cart class="size-6" />
+
+                    @if ($cartCount > 0)
+                        <span class="absolute -right-1 -top-1 flex h-6 min-w-6 items-center justify-center rounded-full bg-amber-400 px-1 text-xs font-black text-zinc-950 ring-2 ring-zinc-950">
+                            {{ $cartCount }}
+                        </span>
+                    @endif
+                </a>
 
                 @auth
-                    <flux:navbar.item :href="route('dashboard')" wire:navigate>
-                        {{ __('Dashboard') }}
-                    </flux:navbar.item>
+                    <a href="{{ route('dashboard') }}" wire:navigate class="rounded-full bg-gradient-to-r from-emerald-500 to-lime-500 px-5 py-2 font-bold text-zinc-950 shadow-lg shadow-emerald-500/20 transition hover:scale-105">
+                        Dashboard
+                    </a>
                 @else
-                    <flux:navbar.item :href="route('login')" wire:navigate>
-                        {{ __('Log in') }}
-                    </flux:navbar.item>
+                    <a href="{{ route('login') }}" wire:navigate class="rounded-full bg-gradient-to-r from-emerald-500 to-lime-500 px-5 py-2 font-bold text-zinc-950 shadow-lg shadow-emerald-500/20 transition hover:scale-105">
+                        Log in
+                    </a>
                 @endauth
-            </flux:navbar>
-        </flux:header>
+            </nav>
+        </div>
+    </header>
 
-        <main class="container mx-auto px-4 py-8 md:px-6 md:py-12">
-            {{ $slot }}
-        </main>
+    <main class="mx-auto w-full max-w-7xl overflow-x-hidden px-4 py-6 sm:px-6 md:py-10 lg:px-8">
+        {{ $slot }}
+    </main>
 
-        <footer class="mt-16 border-t border-zinc-200 bg-zinc-50 py-8 dark:border-zinc-700 dark:bg-zinc-900">
-            <div class="container mx-auto px-4 text-center text-sm text-zinc-600 dark:text-zinc-400">
-                &copy; {{ date('Y') }} Smart Agro. {{ __('Premium King Coconut from Sri Lanka.') }}
-            </div>
-        </footer>
+    <footer class="mt-12 w-full overflow-x-hidden border-t border-emerald-500/20 bg-zinc-950 py-8">
+        <div class="mx-auto w-full max-w-7xl px-4 text-center text-sm text-zinc-400 sm:px-6 lg:px-8">
+            &copy; {{ date('Y') }} Smart Agro. Premium King Coconut from Sri Lanka.
+        </div>
+    </footer>
 
-        @persist('toast')
-            <flux:toast.group>
-                <flux:toast />
-            </flux:toast.group>
-        @endpersist
+    @persist('toast')
+        <flux:toast.group>
+            <flux:toast />
+        </flux:toast.group>
+    @endpersist
 
-        @fluxScripts
-    </body>
+    @fluxScripts
+</body>
 </html>

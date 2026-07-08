@@ -50,6 +50,7 @@ new #[Title('Manage Products')] class extends Component {
     public function openEdit(int $id): void
     {
         $product = Product::findOrFail($id);
+
         $this->editingId = $product->id;
         $this->name = $product->name;
         $this->description = $product->description ?? '';
@@ -58,6 +59,7 @@ new #[Title('Manage Products')] class extends Component {
         $this->image = null;
         $this->currentImage = $product->image;
         $this->is_active = $product->is_active;
+
         Flux::modal('product-form')->show();
     }
 
@@ -84,7 +86,9 @@ new #[Title('Manage Products')] class extends Component {
         } else {
             $data['slug'] = Str::slug($data['name']).'-'.Str::random(5);
             $data['image'] = $imagePath;
+
             Product::create($data);
+
             Flux::toast(variant: 'success', text: __('Product created.'));
         }
 
@@ -96,6 +100,7 @@ new #[Title('Manage Products')] class extends Component {
     {
         $product = Product::findOrFail($id);
         $product->update(['is_active' => ! $product->is_active]);
+
         Flux::toast(variant: 'success', text: __('Product visibility updated.'));
     }
 
@@ -103,6 +108,7 @@ new #[Title('Manage Products')] class extends Component {
     {
         try {
             Product::findOrFail($id)->delete();
+
             Flux::toast(variant: 'success', text: __('Product deleted.'));
         } catch (\Throwable $e) {
             Flux::toast(variant: 'danger', text: __('Cannot delete product with existing orders. Deactivate it instead.'));
@@ -119,21 +125,100 @@ new #[Title('Manage Products')] class extends Component {
         $this->image = null;
         $this->currentImage = null;
         $this->is_active = true;
+
         $this->resetErrorBag();
     }
 }; ?>
 
-<div class="p-6">
-    <div class="flex h-full w-full flex-1 flex-col gap-6 rounded-xl">
-        <div class="flex items-center justify-between">
-            <flux:heading size="xl" class="!font-bold">{{ __('Products') }}</flux:heading>
-            <flux:button variant="primary" icon="plus" wire:click="openCreate">
+<div class="w-full max-w-full overflow-x-hidden p-4 sm:p-6">
+    <div class="flex h-full w-full min-w-0 flex-1 flex-col gap-6 rounded-xl">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <flux:heading size="xl" class="!font-bold">
+                {{ __('Products') }}
+            </flux:heading>
+
+            <flux:button variant="primary" icon="plus" wire:click="openCreate" class="w-full sm:w-auto">
                 {{ __('Add Product') }}
             </flux:button>
         </div>
 
-        <div class="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700">
-            <table class="w-full">
+        {{-- Mobile Card View --}}
+        <div class="space-y-4 lg:hidden">
+            @forelse ($this->products as $product)
+                <div class="w-full rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
+                    <div class="flex w-full gap-3">
+                        <div class="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-700">
+                            @if ($product->image)
+                                <img
+                                    src="{{ asset('storage/'.$product->image) }}"
+                                    alt="{{ $product->name }}"
+                                    class="h-full w-full object-cover"
+                                >
+                            @else
+                                <div class="flex h-full w-full items-center justify-center text-[10px] font-medium uppercase text-zinc-400">
+                                    {{ __('No image') }}
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="min-w-0 flex-1">
+                            <div class="break-words text-base font-bold text-zinc-900 dark:text-zinc-100">
+                                {{ $product->name }}
+                            </div>
+
+                            <div class="mt-1 break-words text-xs text-zinc-500">
+                                {{ Str::limit($product->description, 80) }}
+                            </div>
+
+                            <div class="mt-3 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+                                <div class="flex justify-between gap-3">
+                                    <span class="font-medium">{{ __('Price') }}</span>
+                                    <span class="whitespace-nowrap">LKR {{ number_format($product->price, 2) }}</span>
+                                </div>
+
+                                <div class="flex justify-between gap-3">
+                                    <span class="font-medium">{{ __('Stock') }}</span>
+                                    <span>{{ $product->stock }}</span>
+                                </div>
+
+                                <div class="flex items-center justify-between gap-3">
+                                    <span class="font-medium">{{ __('Status') }}</span>
+                                    <flux:badge size="sm" :color="$product->is_active ? 'emerald' : 'zinc'">
+                                        {{ $product->is_active ? __('Active') : __('Hidden') }}
+                                    </flux:badge>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex flex-wrap gap-2 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+                        <flux:button size="sm" icon="pencil" wire:click="openEdit({{ $product->id }})">
+                            {{ __('Edit') }}
+                        </flux:button>
+
+                        <flux:button size="sm" wire:click="toggleActive({{ $product->id }})">
+                            {{ $product->is_active ? __('Hide') : __('Show') }}
+                        </flux:button>
+
+                        <flux:button
+                            size="sm"
+                            variant="danger"
+                            icon="trash"
+                            wire:click="delete({{ $product->id }})"
+                            wire:confirm="{{ __('Delete this product?') }}"
+                        />
+                    </div>
+                </div>
+            @empty
+                <div class="rounded-xl border border-zinc-200 p-6 text-center text-sm text-zinc-500 dark:border-zinc-700">
+                    {{ __('No products yet. Click "Add Product" to create one.') }}
+                </div>
+            @endforelse
+        </div>
+
+        {{-- Desktop Table View --}}
+        <div class="hidden w-full max-w-full overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-700 lg:block">
+            <table class="w-full min-w-[850px]">
                 <thead class="bg-zinc-50 dark:bg-zinc-800">
                     <tr class="text-left text-sm">
                         <th class="px-4 py-3 font-medium">{{ __('Image') }}</th>
@@ -144,35 +229,66 @@ new #[Title('Manage Products')] class extends Component {
                         <th class="px-4 py-3 text-right font-medium">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
+
                 <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700">
                     @forelse ($this->products as $product)
                         <tr>
                             <td class="px-4 py-3">
                                 @if ($product->image)
-                                    <img src="{{ asset('storage/'.$product->image) }}" alt="{{ $product->name }}" class="h-14 w-14 rounded-lg object-cover ring-1 ring-zinc-200 dark:ring-zinc-700">
+                                    <img
+                                        src="{{ asset('storage/'.$product->image) }}"
+                                        alt="{{ $product->name }}"
+                                        class="h-14 w-14 rounded-lg object-cover ring-1 ring-zinc-200 dark:ring-zinc-700"
+                                    >
                                 @else
                                     <div class="flex h-14 w-14 items-center justify-center rounded-lg border border-dashed border-zinc-300 text-[10px] font-medium uppercase tracking-wide text-zinc-400 dark:border-zinc-600">
                                         {{ __('No image') }}
                                     </div>
                                 @endif
                             </td>
+
                             <td class="px-4 py-3">
-                                <div class="font-medium">{{ $product->name }}</div>
-                                <div class="text-xs text-zinc-500">{{ Str::limit($product->description, 60) }}</div>
+                                <div class="max-w-[260px] break-words font-medium">
+                                    {{ $product->name }}
+                                </div>
+
+                                <div class="max-w-[300px] break-words text-xs text-zinc-500">
+                                    {{ Str::limit($product->description, 60) }}
+                                </div>
                             </td>
-                            <td class="px-4 py-3">{{ number_format($product->price, 2) }}</td>
-                            <td class="px-4 py-3">{{ $product->stock }}</td>
+
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                {{ number_format($product->price, 2) }}
+                            </td>
+
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                {{ $product->stock }}
+                            </td>
+
                             <td class="px-4 py-3">
                                 <flux:badge size="sm" :color="$product->is_active ? 'emerald' : 'zinc'">
                                     {{ $product->is_active ? __('Active') : __('Hidden') }}
                                 </flux:badge>
                             </td>
-                            <td class="px-4 py-3 text-right">
-                                <flux:button size="sm" icon="pencil" wire:click="openEdit({{ $product->id }})">{{ __('Edit') }}</flux:button>
-                                <flux:button size="sm" wire:click="toggleActive({{ $product->id }})">
-                                    {{ $product->is_active ? __('Hide') : __('Show') }}
-                                </flux:button>
-                                <flux:button size="sm" variant="danger" icon="trash" wire:click="delete({{ $product->id }})" wire:confirm="{{ __('Delete this product?') }}" />
+
+                            <td class="px-4 py-3">
+                                <div class="flex flex-wrap justify-end gap-2">
+                                    <flux:button size="sm" icon="pencil" wire:click="openEdit({{ $product->id }})">
+                                        {{ __('Edit') }}
+                                    </flux:button>
+
+                                    <flux:button size="sm" wire:click="toggleActive({{ $product->id }})">
+                                        {{ $product->is_active ? __('Hide') : __('Show') }}
+                                    </flux:button>
+
+                                    <flux:button
+                                        size="sm"
+                                        variant="danger"
+                                        icon="trash"
+                                        wire:click="delete({{ $product->id }})"
+                                        wire:confirm="{{ __('Delete this product?') }}"
+                                    />
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -187,40 +303,68 @@ new #[Title('Manage Products')] class extends Component {
         </div>
     </div>
 
-    <flux:modal name="product-form" class="md:w-[500px]">
+    <flux:modal name="product-form" class="w-[calc(100vw-2rem)] max-w-[500px]">
         <form wire:submit="save" class="space-y-4" enctype="multipart/form-data">
             <flux:heading size="lg" class="!font-semibold">
                 {{ $editingId ? __('Edit Product') : __('Add Product') }}
             </flux:heading>
 
             <flux:input wire:model="name" :label="__('Name')" required />
+
             <flux:textarea wire:model="description" :label="__('Description')" rows="3" />
-            <div class="grid grid-cols-2 gap-4">
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <flux:input wire:model="price" type="number" step="0.01" min="0" :label="__('Price (LKR)')" required />
                 <flux:input wire:model="stock" type="number" min="0" :label="__('Stock')" required />
             </div>
 
             <div class="space-y-2">
-                <label class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{{ __('Item Image') }}</label>
-                <input wire:model="image" type="file" accept="image/*" class="block w-full cursor-pointer rounded-lg border border-zinc-300 bg-white text-sm text-zinc-900 shadow-sm file:mr-4 file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:file:bg-zinc-100 dark:file:text-zinc-900 dark:hover:file:bg-zinc-200">
+                <label class="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    {{ __('Item Image') }}
+                </label>
+
+                <input
+                    wire:model="image"
+                    type="file"
+                    accept="image/*"
+                    class="block w-full cursor-pointer rounded-lg border border-zinc-300 bg-white text-sm text-zinc-900 shadow-sm file:mr-4 file:border-0 file:bg-zinc-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:file:bg-zinc-100 dark:file:text-zinc-900 dark:hover:file:bg-zinc-200"
+                >
+
                 @error('image')
                     <p class="text-sm text-red-600">{{ $message }}</p>
                 @enderror
+
                 @if ($editingId && $currentImage)
-                    <div class="flex items-center gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
-                        <img src="{{ asset('storage/'.$currentImage) }}" alt="{{ $name }}" class="h-16 w-16 rounded-lg object-cover">
-                        <div>
-                            <div class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ __('Current image') }}</div>
-                            <div class="text-xs text-zinc-500">{{ __('Upload a new file to replace it.') }}</div>
+                    <div class="flex min-w-0 items-center gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
+                        <img
+                            src="{{ asset('storage/'.$currentImage) }}"
+                            alt="{{ $name }}"
+                            class="h-16 w-16 shrink-0 rounded-lg object-cover"
+                        >
+
+                        <div class="min-w-0">
+                            <div class="break-words text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                                {{ __('Current image') }}
+                            </div>
+
+                            <div class="break-words text-xs text-zinc-500">
+                                {{ __('Upload a new file to replace it.') }}
+                            </div>
                         </div>
                     </div>
                 @endif
             </div>
+
             <flux:switch wire:model="is_active" :label="__('Visible to customers')" />
 
-            <div class="flex justify-end gap-2">
-                <flux:button type="button" x-on:click="$flux.modal('product-form').close()">{{ __('Cancel') }}</flux:button>
-                <flux:button type="submit" variant="primary">{{ __('Save') }}</flux:button>
+            <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <flux:button type="button" x-on:click="$flux.modal('product-form').close()" class="w-full sm:w-auto">
+                    {{ __('Cancel') }}
+                </flux:button>
+
+                <flux:button type="submit" variant="primary" class="w-full sm:w-auto">
+                    {{ __('Save') }}
+                </flux:button>
             </div>
         </form>
     </flux:modal>
